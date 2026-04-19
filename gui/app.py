@@ -1,3 +1,4 @@
+import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
@@ -7,9 +8,12 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from gui.i18n import get, LANGUAGES
+from io_manager import Dataset, save, load
+from solver import solve_bvp
 
 
 METHODS = ["RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA"]
+COLORS  = ["#2c6fad", "#e05a2b", "#4a8f5f", "#8e44ad", "#c0392b", "#16a085"]
 
 FONT       = ("Segoe UI", 13)
 FONT_BOLD  = ("Segoe UI", 13, "bold")
@@ -105,7 +109,6 @@ class App:
         self._build_output_panel(right)
 
     def _build_input_panel(self, parent):
-        # Interval [a, b]
         self.lbl_interval = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_interval.pack(anchor="w", pady=(0, 2))
 
@@ -117,33 +120,28 @@ class App:
         self.entry_b = ttk.Entry(ab, width=8)
         self.entry_b.pack(side="left")
 
-        # t*
         self.lbl_tstar = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_tstar.pack(anchor="w", pady=(0, 2))
         self.entry_tstar = ttk.Entry(parent, width=18)
         self.entry_tstar.pack(fill="x", pady=(0, 10))
 
-        # Equations
         self.lbl_equations = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_equations.pack(anchor="w")
         self.eq_container, self.eq_rows = self._build_table(parent)
 
         ttk.Separator(parent, orient="horizontal").pack(fill="x", pady=8)
 
-        # Boundary conditions
         self.lbl_boundary = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_boundary.pack(anchor="w")
         self.bc_container, self.bc_rows = self._build_table(parent)
 
         ttk.Separator(parent, orient="horizontal").pack(fill="x", pady=8)
 
-        # p0
         self.lbl_p0 = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_p0.pack(anchor="w", pady=(0, 2))
         self.entry_p0 = ttk.Entry(parent, width=30)
         self.entry_p0.pack(fill="x", pady=(0, 12))
 
-        # Buttons
         btns = ttk.Frame(parent)
         btns.pack(fill="x")
 
@@ -199,24 +197,32 @@ class App:
         self.lbl_plot = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_plot.pack(anchor="w", pady=(0, 4))
 
-        fig = Figure(figsize=(5, 3.5), dpi=96, facecolor=BG)
-        self.ax = fig.add_subplot(111)
+        self.fig = Figure(figsize=(5, 3.5), dpi=96, facecolor=BG)
+        self.ax = self.fig.add_subplot(111)
         self.ax.set_facecolor(WHITE)
         self.ax.tick_params(labelsize=11)
-        fig.tight_layout(pad=2)
+        self.fig.tight_layout(pad=2)
 
-        self.canvas = FigureCanvasTkAgg(fig, master=parent)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=parent)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
         self.lbl_table = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_table.pack(anchor="w", pady=(10, 2))
 
-        cols = ("t", "x")
-        self.tree = ttk.Treeview(parent, columns=cols, show="headings", height=5)
-        self.tree.heading("t", text="t")
-        self.tree.heading("x", text="x(t)")
-        self.tree.column("t", width=110, anchor="center")
-        self.tree.column("x", width=220, anchor="center")
+        self.tree_frame = ttk.Frame(parent)
+        self.tree_frame.pack(fill="x")
+        self.tree = None
+
+    def _rebuild_tree(self, var_names):
+        if self.tree:
+            self.tree.destroy()
+
+        cols = ["t"] + var_names
+        self.tree = ttk.Treeview(self.tree_frame, columns=cols,
+                                  show="headings", height=5)
+        for col in cols:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=max(80, 200 // len(cols)), anchor="center")
         self.tree.pack(fill="x")
 
     # ------------------------------------------------------------------ #
@@ -240,8 +246,8 @@ class App:
             w.grid(row=r, column=1, sticky="w")
             return w
 
-        self.combo_inner   = row(0, "lbl_inner_method", combobox=True, default="RK45")
-        self.combo_outer   = row(1, "lbl_outer_method", combobox=True, default="RK45")
+        self.combo_inner      = row(0, "lbl_inner_method", combobox=True, default="RK45")
+        self.combo_outer      = row(1, "lbl_outer_method", combobox=True, default="RK45")
         self.entry_inner_rtol = row(2, "lbl_inner_tol",  default="1e-6")
         self.entry_outer_rtol = row(3, "lbl_outer_tol",  default="1e-4")
         self.entry_max_iter   = row(4, "lbl_max_iter",   default="10")
@@ -287,24 +293,155 @@ class App:
         self.help_widget.pack(fill="both", expand=True)
 
     # ------------------------------------------------------------------ #
-    #  Actions                                                             #
+    #  Input collection                                                    #
+    # ------------------------------------------------------------------ #
+    def _collect_input(self):
+        if len(self.eq_rows) != len(self.bc_rows):
+            raise ValueError(self._t("err_count_mismatch"))
+
+        a      = float(self.entry_a.get())
+        b      = float(self.entry_b.get())
+        t_star = float(self.entry_tstar.get()) if self.entry_tstar.get().strip() else a
+        eqs    = [e.get().strip() for _, e in self.eq_rows]
+        bcs    = [e.get().strip() for _, e in self.bc_rows]
+        p0     = [float(v.strip()) for v in self.entry_p0.get().split(",")]
+        n      = len(eqs)
+        vars_  = [f"x{i+1}" for i in range(n)]
+
+        return dict(
+            f_strings    = eqs,
+            R_strings    = bcs,
+            var_names    = vars_,
+            t_name       = "t",
+            p0           = p0,
+            t_span       = (a, b),
+            t_star       = t_star,
+            inner_method = self.combo_inner.get(),
+            outer_method = self.combo_outer.get(),
+            inner_rtol   = float(self.entry_inner_rtol.get()),
+            inner_atol   = float(self.entry_inner_rtol.get()),
+            outer_rtol   = float(self.entry_outer_rtol.get()),
+            outer_atol   = float(self.entry_outer_rtol.get()),
+            max_iter     = int(self.entry_max_iter.get()),
+        ), vars_
+
+    # ------------------------------------------------------------------ #
+    #  Solve                                                               #
     # ------------------------------------------------------------------ #
     def _on_solve(self):
-        if len(self.eq_rows) != len(self.bc_rows):
-            messagebox.showerror("", self._t("err_count_mismatch"))
+        try:
+            params, var_names = self._collect_input()
+        except ValueError as e:
+            messagebox.showerror("", str(e))
             return
-        self.lbl_status.config(text=self._t("status_solving"))
-        self.root.after(50, self._stub_solve)
 
-    def _stub_solve(self):
-        self.lbl_status.config(text=self._t("err_not_implemented"))
+        self.lbl_status.config(text=self._t("status_solving"), foreground="#888888")
+        self.btn_solve.config(state="disabled")
 
+        def worker():
+            try:
+                _, t, x = solve_bvp(**params)
+                self.root.after(0, lambda: self._update_results(t, x, var_names))
+            except Exception as e:
+                self.root.after(0, lambda: self._on_error(str(e)))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _update_results(self, t, x, var_names):
+        self.ax.clear()
+        self.ax.set_facecolor(WHITE)
+        self.ax.tick_params(labelsize=11)
+
+        for i, name in enumerate(var_names):
+            color = COLORS[i % len(COLORS)]
+            self.ax.plot(t, x[i], color=color, linewidth=2, label=name)
+
+        self.ax.legend(fontsize=11)
+        self.ax.set_xlabel("t", fontsize=12)
+        self.fig.tight_layout(pad=2)
+        self.canvas.draw()
+
+        self._rebuild_tree(var_names)
+        step = max(1, len(t) // 50)
+        for j in range(0, len(t), step):
+            row = [f"{t[j]:.4f}"] + [f"{x[i][j]:.6f}" for i in range(len(var_names))]
+            self.tree.insert("", "end", values=row)
+
+        self.lbl_status.config(text=self._t("status_done"), foreground=GREEN)
+        self.btn_solve.config(state="normal")
+
+    def _on_error(self, msg):
+        self.lbl_status.config(text=self._t("status_error", msg=msg), foreground=RED)
+        self.btn_solve.config(state="normal")
+
+    # ------------------------------------------------------------------ #
+    #  Save / Load                                                         #
+    # ------------------------------------------------------------------ #
     def _on_save(self):
-        filedialog.asksaveasfilename(defaultextension=".json",
-                                      filetypes=[("JSON", "*.json")])
+        try:
+            params, _ = self._collect_input()
+        except ValueError as e:
+            messagebox.showerror("", str(e))
+            return
+
+        path = filedialog.asksaveasfilename(
+            defaultextension=".json", filetypes=[("JSON", "*.json")]
+        )
+        if not path:
+            return
+
+        a, b = params["t_span"]
+        ds = Dataset(
+            equations          = params["f_strings"],
+            boundary_conditions= params["R_strings"],
+            variables          = params["var_names"],
+            t_var              = params["t_name"],
+            a=a, b=b,
+            t_star             = params["t_star"],
+            p0                 = params["p0"],
+            inner_method       = params["inner_method"],
+            inner_rtol         = params["inner_rtol"],
+            inner_atol         = params["inner_atol"],
+            outer_method       = params["outer_method"],
+            outer_rtol         = params["outer_rtol"],
+            outer_atol         = params["outer_atol"],
+            max_iter           = params["max_iter"],
+        )
+        save(ds, path)
 
     def _on_load(self):
-        filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
+        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
+        if not path:
+            return
+
+        ds = load(path)
+
+        self.entry_a.delete(0, "end");     self.entry_a.insert(0, str(ds.a))
+        self.entry_b.delete(0, "end");     self.entry_b.insert(0, str(ds.b))
+        self.entry_tstar.delete(0, "end"); self.entry_tstar.insert(0, str(ds.t_star))
+        self.entry_p0.delete(0, "end");    self.entry_p0.insert(0, ", ".join(str(v) for v in ds.p0))
+
+        while len(self.eq_rows) > 1:
+            self._remove_row(self.eq_rows)
+        while len(self.bc_rows) > 1:
+            self._remove_row(self.bc_rows)
+
+        _, e = self.eq_rows[0]; e.delete(0, "end"); e.insert(0, ds.equations[0])
+        _, e = self.bc_rows[0]; e.delete(0, "end"); e.insert(0, ds.boundary_conditions[0])
+
+        for eq in ds.equations[1:]:
+            self._add_row(self.eq_rows, self.eq_container)
+            _, e = self.eq_rows[-1]; e.insert(0, eq)
+
+        for bc in ds.boundary_conditions[1:]:
+            self._add_row(self.bc_rows, self.bc_container)
+            _, e = self.bc_rows[-1]; e.insert(0, bc)
+
+        self.combo_inner.set(ds.inner_method)
+        self.combo_outer.set(ds.outer_method)
+        self.entry_inner_rtol.delete(0, "end"); self.entry_inner_rtol.insert(0, str(ds.inner_rtol))
+        self.entry_outer_rtol.delete(0, "end"); self.entry_outer_rtol.insert(0, str(ds.outer_rtol))
+        self.entry_max_iter.delete(0, "end");   self.entry_max_iter.insert(0, str(ds.max_iter))
 
     # ------------------------------------------------------------------ #
     #  Language                                                            #

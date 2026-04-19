@@ -23,10 +23,10 @@ STRINGS = {
         "result_table":   "Таблица значений",
 
         # Parameters tab
-        "inner_method":   "Метод (внутренняя задача)",
         "outer_method":   "Метод (внешняя задача)",
-        "inner_tol":      "Точность внутренней задачи",
+        "inner_method":   "Метод (внутренняя задача)",
         "outer_tol":      "Точность внешней задачи",
+        "inner_tol":      "Точность внутренней задачи",
         "max_iter":       "Макс. итераций",
 
         # Author tab
@@ -71,10 +71,10 @@ STRINGS = {
         "result_table":   "Value table",
 
         # Parameters tab
-        "inner_method":   "Method (inner problem)",
         "outer_method":   "Method (outer problem)",
-        "inner_tol":      "Inner problem tolerance",
+        "inner_method":   "Method (inner problem)",
         "outer_tol":      "Outer problem tolerance",
+        "inner_tol":      "Inner problem tolerance",
         "max_iter":       "Max iterations",
 
         # Author tab

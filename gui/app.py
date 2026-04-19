@@ -99,8 +99,9 @@ class App:
         self.tab_solution = ttk.Frame(self.nb, padding=10)
         self.nb.add(self.tab_solution, text="")
 
-        left = ttk.Frame(self.tab_solution, padding=(0, 0, 14, 0))
+        left = ttk.Frame(self.tab_solution, padding=(0, 0, 14, 0), width=310)
         left.pack(side="left", fill="y")
+        left.pack_propagate(False)
 
         ttk.Separator(self.tab_solution, orient="vertical").pack(side="left", fill="y")
 
@@ -129,13 +130,13 @@ class App:
 
         self.lbl_equations = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_equations.pack(anchor="w")
-        self.eq_container, self.eq_rows = self._build_table(parent)
+        self.eq_container, self.eq_rows = self._build_table(parent, self_rows_ref="eq")
 
         ttk.Separator(parent, orient="horizontal").pack(fill="x", pady=8)
 
         self.lbl_boundary = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_boundary.pack(anchor="w")
-        self.bc_container, self.bc_rows = self._build_table(parent)
+        self.bc_container, self.bc_rows = self._build_table(parent, self_rows_ref="bc")
 
         ttk.Separator(parent, orient="horizontal").pack(fill="x", pady=8)
 
@@ -159,23 +160,42 @@ class App:
         self.lbl_status = ttk.Label(parent, font=FONT_SMALL, foreground="#888888")
         self.lbl_status.pack(anchor="w", pady=(6, 0))
 
-    def _build_table(self, parent):
+    def _build_table(self, parent, self_rows_ref=None):
         header = ttk.Frame(parent)
         header.pack(fill="x", pady=(2, 2))
 
         rows = []
-
         container = ttk.Frame(parent)
         container.pack(fill="x")
+
+        def on_add():
+            if self_rows_ref == "eq":
+                self._add_row(self.eq_rows, self.eq_container)
+                self._add_row(self.bc_rows, self.bc_container)
+            elif self_rows_ref == "bc":
+                self._add_row(self.bc_rows, self.bc_container)
+                self._add_row(self.eq_rows, self.eq_container)
+            else:
+                self._add_row(rows, container)
+
+        def on_remove():
+            if self_rows_ref == "eq":
+                self._remove_row(self.eq_rows)
+                self._remove_row(self.bc_rows)
+            elif self_rows_ref == "bc":
+                self._remove_row(self.bc_rows)
+                self._remove_row(self.eq_rows)
+            else:
+                self._remove_row(rows)
 
         tk.Button(header, text="+", font=FONT_BOLD, bg=ACCENT, fg=WHITE,
                   relief="flat", padx=8, cursor="hand2",
                   activebackground=ACCENT, activeforeground=WHITE,
-                  command=lambda: self._add_row(rows, container)).pack(side="right", padx=2)
+                  command=on_add).pack(side="right", padx=2)
         tk.Button(header, text="−", font=FONT_BOLD, bg=GREY, fg=WHITE,
                   relief="flat", padx=8, cursor="hand2",
                   activebackground=GREY, activeforeground=WHITE,
-                  command=lambda: self._remove_row(rows)).pack(side="right", padx=2)
+                  command=on_remove).pack(side="right", padx=2)
 
         self._add_row(rows, container)
         return container, rows
@@ -248,10 +268,10 @@ class App:
             w.grid(row=r, column=1, sticky="w")
             return w
 
-        self.combo_inner      = row(0, "lbl_inner_method", combobox=True, default="RK45")
-        self.combo_outer      = row(1, "lbl_outer_method", combobox=True, default="RK45")
-        self.entry_inner_rtol = row(2, "lbl_inner_tol",  default="1e-6")
-        self.entry_outer_rtol = row(3, "lbl_outer_tol",  default="1e-4")
+        self.combo_outer      = row(0, "lbl_outer_method", combobox=True, default="RK45")
+        self.combo_inner      = row(1, "lbl_inner_method", combobox=True, default="RK45")
+        self.entry_outer_rtol = row(2, "lbl_outer_tol",  default="1e-4")
+        self.entry_inner_rtol = row(3, "lbl_inner_tol",  default="1e-6")
         self.entry_max_iter   = row(4, "lbl_max_iter",   default="10")
 
     # ------------------------------------------------------------------ #

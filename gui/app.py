@@ -1,6 +1,8 @@
+import os
 import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from PIL import Image, ImageTk
 
 import matplotlib
 matplotlib.use("TkAgg")
@@ -266,11 +268,19 @@ class App:
                               bg="#d0d8e4", relief="groove", bd=2)
         photo_box.pack(pady=(0, 18))
         photo_box.pack_propagate(False)
-        tk.Label(photo_box, text="photo", bg="#d0d8e4",
-                 font=FONT_SMALL, fg="#888888").place(relx=0.5, rely=0.5, anchor="center")
 
-        ttk.Label(inner, text="Иванов Иван Иванович", font=FONT_BOLD).pack()
-        ttk.Label(inner, text="Группа 000-000", font=FONT).pack(pady=(4, 24))
+        photo_path = os.path.join(os.path.dirname(__file__), "..", "images", "IMG_2705 W.jpg")
+        try:
+            img = Image.open(photo_path)
+            img.thumbnail((120, 150))
+            self._photo = ImageTk.PhotoImage(img)
+            tk.Label(photo_box, image=self._photo, bg="#d0d8e4").place(relx=0.5, rely=0.5, anchor="center")
+        except Exception:
+            tk.Label(photo_box, text="photo", bg="#d0d8e4",
+                     font=FONT_SMALL, fg="#888888").place(relx=0.5, rely=0.5, anchor="center")
+
+        ttk.Label(inner, text="Дроздов Александр Юрьевич", font=FONT_BOLD).pack()
+        ttk.Label(inner, text="Группа 313", font=FONT).pack(pady=(4, 24))
 
         self.btn_exit = tk.Button(inner, font=FONT_BOLD,
                                    bg=RED, fg=WHITE, relief="flat",

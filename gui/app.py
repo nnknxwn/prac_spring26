@@ -1057,10 +1057,13 @@ class MainWindow(QMainWindow):
                     color: {c["text"]};
                     outline: none;
                     border: none;
+                    border-radius: 8px;
                 }}
                 QListView::item {{
                     padding: 5px 10px;
                     border: none;
+                    border-radius: 6px;
+                    margin: 2px 4px;
                 }}
                 QListView::item:hover {{
                     background-color: {c["top_btn_hover"]};
@@ -1078,6 +1081,7 @@ class MainWindow(QMainWindow):
                     QWidget {{
                         background-color: {c["card"]};
                         border: 1px solid {c["border"]};
+                        border-radius: 8px;
                     }}
                 """)
 

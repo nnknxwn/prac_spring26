@@ -20,7 +20,37 @@ from gui.i18n import get, LANGUAGES
 from solver import solve_bvp
 
 
-METHODS = ["RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA"]
+METHOD_KEYS = ["RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA"]
+
+METHOD_DISPLAY = {
+    "ru": {
+        "RK45":   "Рунге-Кутта 4(5)",
+        "RK23":   "Рунге-Кутта 2(3)",
+        "DOP853": "Дорманд-Принс 8(5,3)",
+        "Radau":  "Радо IIA (неявный)",
+        "BDF":    "BDF (формулы дифференцирования назад)",
+        "LSODA":  "LSODA (автовыбор)",
+    },
+    "en": {
+        "RK45":   "Runge-Kutta 4(5)",
+        "RK23":   "Runge-Kutta 2(3)",
+        "DOP853": "Dormand-Prince 8(5,3)",
+        "Radau":  "Radau IIA (implicit)",
+        "BDF":    "BDF (backward differentiation)",
+        "LSODA":  "LSODA (auto-select)",
+    },
+}
+
+# Smart defaults: rtol, atol per method
+METHOD_DEFAULTS = {
+    "RK45":   {"rtol": "1e-6",  "atol": "1e-6"},
+    "RK23":   {"rtol": "1e-4",  "atol": "1e-4"},
+    "DOP853": {"rtol": "1e-8",  "atol": "1e-8"},
+    "Radau":  {"rtol": "1e-6",  "atol": "1e-9"},
+    "BDF":    {"rtol": "1e-6",  "atol": "1e-9"},
+    "LSODA":  {"rtol": "1e-6",  "atol": "1e-6"},
+}
+
 COLORS  = ["#2563eb", "#f97316", "#10b981", "#a855f7", "#ef4444", "#06b6d4"]
 
 
@@ -653,60 +683,154 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ #
     def _build_params_tab(self):
         tab = QWidget()
-        outer = QVBoxLayout(tab)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+
+        content = QWidget()
+        outer = QVBoxLayout(content)
         outer.setContentsMargins(40, 30, 40, 30)
-        outer.setSpacing(0)
+        outer.setSpacing(20)
 
-        card = self._card()
-        g = QGridLayout(card)
-        g.setContentsMargins(36, 28, 36, 28)
-        g.setHorizontalSpacing(36)
-        g.setVerticalSpacing(18)
+        # ---- Inner problem card ----
+        inner_card = self._card()
+        iv = QVBoxLayout(inner_card)
+        iv.setContentsMargins(28, 22, 28, 22)
+        iv.setSpacing(6)
 
-        def field_label():
-            l = QLabel()
-            l.setObjectName("fieldLabel")
-            return l
+        self.lbl_inner_title = QLabel()
+        self.lbl_inner_title.setObjectName("section")
+        iv.addWidget(self.lbl_inner_title)
 
-        self.lbl_outer_method = field_label()
-        self.combo_outer = QComboBox()
-        self.combo_outer.addItems(METHODS)
-        self.combo_outer.setCurrentText("RK45")
-        self.combo_outer.setFixedWidth(160)
+        self.lbl_inner_desc = QLabel()
+        self.lbl_inner_desc.setObjectName("muted")
+        iv.addWidget(self.lbl_inner_desc)
 
-        self.lbl_inner_method = field_label()
+        iv.addSpacing(10)
+
+        ig = QGridLayout()
+        ig.setHorizontalSpacing(24)
+        ig.setVerticalSpacing(14)
+
+        self.lbl_inner_method = QLabel()
+        self.lbl_inner_method.setObjectName("fieldLabel")
         self.combo_inner = QComboBox()
-        self.combo_inner.addItems(METHODS)
-        self.combo_inner.setCurrentText("RK45")
-        self.combo_inner.setFixedWidth(160)
+        self.combo_inner.setMinimumWidth(260)
+        self.combo_inner.currentIndexChanged.connect(
+            lambda idx: self._on_method_changed("inner"))
 
-        self.lbl_outer_tol = field_label()
-        self.entry_outer_rtol = QLineEdit("1e-4")
-        self.entry_outer_rtol.setFixedWidth(160)
-
-        self.lbl_inner_tol = field_label()
+        self.lbl_inner_rtol = QLabel()
+        self.lbl_inner_rtol.setObjectName("fieldLabel")
         self.entry_inner_rtol = QLineEdit("1e-6")
         self.entry_inner_rtol.setFixedWidth(160)
 
-        self.lbl_max_iter = field_label()
+        self.lbl_inner_atol = QLabel()
+        self.lbl_inner_atol.setObjectName("fieldLabel")
+        self.entry_inner_atol = QLineEdit("1e-6")
+        self.entry_inner_atol.setFixedWidth(160)
+
+        ig.addWidget(self.lbl_inner_method, 0, 0, Qt.AlignmentFlag.AlignVCenter)
+        ig.addWidget(self.combo_inner,      0, 1, Qt.AlignmentFlag.AlignVCenter)
+        ig.addWidget(self.lbl_inner_rtol,   1, 0, Qt.AlignmentFlag.AlignVCenter)
+        ig.addWidget(self.entry_inner_rtol, 1, 1, Qt.AlignmentFlag.AlignVCenter)
+        ig.addWidget(self.lbl_inner_atol,   2, 0, Qt.AlignmentFlag.AlignVCenter)
+        ig.addWidget(self.entry_inner_atol, 2, 1, Qt.AlignmentFlag.AlignVCenter)
+        ig.setColumnStretch(2, 1)
+
+        iv.addLayout(ig)
+        outer.addWidget(inner_card)
+
+        # ---- Outer problem card ----
+        outer_card = self._card()
+        ov = QVBoxLayout(outer_card)
+        ov.setContentsMargins(28, 22, 28, 22)
+        ov.setSpacing(6)
+
+        self.lbl_outer_title = QLabel()
+        self.lbl_outer_title.setObjectName("section")
+        ov.addWidget(self.lbl_outer_title)
+
+        self.lbl_outer_desc = QLabel()
+        self.lbl_outer_desc.setObjectName("muted")
+        ov.addWidget(self.lbl_outer_desc)
+
+        ov.addSpacing(10)
+
+        og = QGridLayout()
+        og.setHorizontalSpacing(24)
+        og.setVerticalSpacing(14)
+
+        self.lbl_outer_method = QLabel()
+        self.lbl_outer_method.setObjectName("fieldLabel")
+        self.combo_outer = QComboBox()
+        self.combo_outer.setMinimumWidth(260)
+        self.combo_outer.currentIndexChanged.connect(
+            lambda idx: self._on_method_changed("outer"))
+
+        self.lbl_outer_rtol = QLabel()
+        self.lbl_outer_rtol.setObjectName("fieldLabel")
+        self.entry_outer_rtol = QLineEdit("1e-4")
+        self.entry_outer_rtol.setFixedWidth(160)
+
+        self.lbl_outer_atol = QLabel()
+        self.lbl_outer_atol.setObjectName("fieldLabel")
+        self.entry_outer_atol = QLineEdit("1e-4")
+        self.entry_outer_atol.setFixedWidth(160)
+
+        self.lbl_max_iter = QLabel()
+        self.lbl_max_iter.setObjectName("fieldLabel")
         self.entry_max_iter = QLineEdit("10")
         self.entry_max_iter.setFixedWidth(160)
 
-        rows = [
-            (self.lbl_outer_method, self.combo_outer),
-            (self.lbl_inner_method, self.combo_inner),
-            (self.lbl_outer_tol,    self.entry_outer_rtol),
-            (self.lbl_inner_tol,    self.entry_inner_rtol),
-            (self.lbl_max_iter,     self.entry_max_iter),
-        ]
-        for r, (lbl, w) in enumerate(rows):
-            g.addWidget(lbl, r, 0, alignment=Qt.AlignmentFlag.AlignVCenter)
-            g.addWidget(w, r, 1, alignment=Qt.AlignmentFlag.AlignVCenter)
-        g.setColumnStretch(2, 1)
+        og.addWidget(self.lbl_outer_method, 0, 0, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.combo_outer,      0, 1, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.lbl_outer_rtol,   1, 0, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.entry_outer_rtol, 1, 1, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.lbl_outer_atol,   2, 0, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.entry_outer_atol, 2, 1, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.lbl_max_iter,     3, 0, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.entry_max_iter,   3, 1, Qt.AlignmentFlag.AlignVCenter)
+        og.setColumnStretch(2, 1)
 
-        outer.addWidget(card)
+        ov.addLayout(og)
+        outer.addWidget(outer_card)
+
         outer.addStretch()
+        scroll.setWidget(content)
+
+        tab_layout = QVBoxLayout(tab)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+        tab_layout.addWidget(scroll)
         return tab
+
+    def _populate_method_combos(self):
+        """Fill method combo boxes with localized display names."""
+        display = METHOD_DISPLAY[self.lang]
+        for combo in (self.combo_inner, self.combo_outer):
+            current_key = METHOD_KEYS[combo.currentIndex()] if combo.count() > 0 else "RK45"
+            combo.blockSignals(True)
+            combo.clear()
+            for key in METHOD_KEYS:
+                combo.addItem(display[key], key)
+            combo.setCurrentIndex(METHOD_KEYS.index(current_key))
+            combo.blockSignals(False)
+
+    def _on_method_changed(self, which):
+        """Apply smart defaults when method changes."""
+        if which == "inner":
+            combo = self.combo_inner
+            rtol_entry = self.entry_inner_rtol
+            atol_entry = self.entry_inner_atol
+        else:
+            combo = self.combo_outer
+            rtol_entry = self.entry_outer_rtol
+            atol_entry = self.entry_outer_atol
+
+        key = combo.currentData()
+        if key and key in METHOD_DEFAULTS:
+            defaults = METHOD_DEFAULTS[key]
+            rtol_entry.setText(defaults["rtol"])
+            atol_entry.setText(defaults["atol"])
 
     # ------------------------------------------------------------------ #
     #  Tab 3 — Author                                                      #
@@ -792,12 +916,12 @@ class MainWindow(QMainWindow):
             p0           = p0,
             t_span       = (a, b),
             t_star       = t_star,
-            inner_method = self.combo_inner.currentText(),
-            outer_method = self.combo_outer.currentText(),
+            inner_method = self.combo_inner.currentData(),
+            outer_method = self.combo_outer.currentData(),
             inner_rtol   = float(self.entry_inner_rtol.text()),
-            inner_atol   = float(self.entry_inner_rtol.text()),
+            inner_atol   = float(self.entry_inner_atol.text()),
             outer_rtol   = float(self.entry_outer_rtol.text()),
-            outer_atol   = float(self.entry_outer_rtol.text()),
+            outer_atol   = float(self.entry_outer_atol.text()),
             max_iter     = int(self.entry_max_iter.text()),
         ), vars_
 
@@ -914,11 +1038,19 @@ class MainWindow(QMainWindow):
         self.lbl_plot.setText(self._t("result_plot"))
         self.lbl_table.setText(self._t("result_table"))
 
-        self.lbl_outer_method.setText(self._t("outer_method"))
-        self.lbl_inner_method.setText(self._t("inner_method"))
-        self.lbl_outer_tol.setText(self._t("outer_tol"))
-        self.lbl_inner_tol.setText(self._t("inner_tol"))
-        self.lbl_max_iter.setText(self._t("max_iter"))
+        # Parameters tab
+        self.lbl_inner_title.setText(self._t("inner_card_title"))
+        self.lbl_inner_desc.setText(self._t("inner_card_desc"))
+        self.lbl_outer_title.setText(self._t("outer_card_title"))
+        self.lbl_outer_desc.setText(self._t("outer_card_desc"))
+        self.lbl_inner_method.setText(self._t("param_method"))
+        self.lbl_outer_method.setText(self._t("param_method"))
+        self.lbl_inner_rtol.setText(self._t("param_rtol"))
+        self.lbl_inner_atol.setText(self._t("param_atol"))
+        self.lbl_outer_rtol.setText(self._t("param_rtol"))
+        self.lbl_outer_atol.setText(self._t("param_atol"))
+        self.lbl_max_iter.setText(self._t("param_max_iter"))
+        self._populate_method_combos()
 
         self.help_widget.setPlainText(self._t("help_text"))
 

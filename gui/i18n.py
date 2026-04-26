@@ -23,17 +23,20 @@ STRINGS = {
         "result_plot":    "График решения",
         "result_table":   "Таблица значений",
 
-        # Parameters tab
-        "outer_method":   "Метод (внешняя задача)",
-        "inner_method":   "Метод (внутренняя задача)",
-        "outer_tol":      "Точность внешней задачи",
-        "inner_tol":      "Точность внутренней задачи",
-        "max_iter":       "Макс. итераций",
+        # Parameters tab — cards
+        "inner_card_title":  "Внутренняя задача",
+        "inner_card_desc":   "Интегрирование физической системы ОДУ",
+        "outer_card_title":  "Внешняя задача",
+        "outer_card_desc":   "Метод продолжения по параметру (гомотопия)",
+        "param_method":      "Метод интегрирования",
+        "param_rtol":        "Относительная точность (rtol)",
+        "param_atol":        "Абсолютная точность (atol)",
+        "param_max_iter":    "Макс. итераций",
 
         # Author tab
         "btn_exit":       "Выход",
 
-        # Help tab — short description shown as text
+        # Help tab
         "help_text": (
             "Метод продолжения по параметру решает краевую задачу\n"
             "x' = f(t,x),  R(x(a), x(b)) = 0\n\n"
@@ -72,12 +75,15 @@ STRINGS = {
         "result_plot":    "Solution plot",
         "result_table":   "Value table",
 
-        # Parameters tab
-        "outer_method":   "Method (outer problem)",
-        "inner_method":   "Method (inner problem)",
-        "outer_tol":      "Outer problem tolerance",
-        "inner_tol":      "Inner problem tolerance",
-        "max_iter":       "Max iterations",
+        # Parameters tab — cards
+        "inner_card_title":  "Inner Problem",
+        "inner_card_desc":   "ODE system integration",
+        "outer_card_title":  "Outer Problem",
+        "outer_card_desc":   "Parameter continuation method (homotopy)",
+        "param_method":      "Integration method",
+        "param_rtol":        "Relative tolerance (rtol)",
+        "param_atol":        "Absolute tolerance (atol)",
+        "param_max_iter":    "Max iterations",
 
         # Author tab
         "btn_exit":       "Exit",

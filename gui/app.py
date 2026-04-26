@@ -1,7 +1,7 @@
 import os
 import threading
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 
 import matplotlib
@@ -10,24 +10,26 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from gui.i18n import get, LANGUAGES
-from io_manager import Dataset, save, load
 from solver import solve_bvp
 
 
 METHODS = ["RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA"]
-COLORS  = ["#2c6fad", "#e05a2b", "#4a8f5f", "#8e44ad", "#c0392b", "#16a085"]
+COLORS  = ["#3a5fc8", "#e05a2b", "#2a9d60", "#8e44ad", "#c0392b", "#0d8a8a"]
 
 FONT       = ("Segoe UI", 13)
 FONT_BOLD  = ("Segoe UI", 13, "bold")
 FONT_TITLE = ("Segoe UI", 16, "bold")
 FONT_SMALL = ("Segoe UI", 11)
 
-BG     = "#f0f4f8"
-ACCENT = "#2c6fad"
-WHITE  = "#ffffff"
-GREEN  = "#4a8f5f"
-GREY   = "#757575"
-RED    = "#b03020"
+BG      = "#f4f6f9"
+BG_CARD = "#ffffff"
+ACCENT  = "#3a5fc8"
+WHITE   = "#ffffff"
+GREEN   = "#2a9d60"
+GREY    = "#6b7280"
+RED     = "#dc3545"
+BORDER  = "#d1d5db"
+FG      = "#1f2937"
 
 
 class App:
@@ -42,45 +44,108 @@ class App:
 
     def _setup_style(self):
         self.root.title("BVP Solver")
-        self.root.geometry("1050x700")
-        self.root.minsize(850, 580)
+        self.root.geometry("1100x720")
+        self.root.minsize(900, 600)
         self.root.configure(bg=BG)
 
         s = ttk.Style(self.root)
         s.theme_use("clam")
-        s.configure(".",              background=BG,   foreground="#222222", font=FONT)
-        s.configure("TFrame",         background=BG)
-        s.configure("TLabel",         background=BG,   font=FONT)
-        s.configure("TEntry",         font=FONT,       padding=4)
-        s.configure("TCombobox",      font=FONT)
-        s.configure("TNotebook",      background=BG,   tabmargins=[2, 6, 2, 0])
-        s.configure("TNotebook.Tab",  font=FONT,       padding=[14, 6])
-        s.configure("Treeview",       font=FONT,       rowheight=28, background=WHITE)
-        s.configure("Treeview.Heading", font=FONT_BOLD)
-        s.configure("TSeparator",     background="#c8d0da")
+        s.configure(".",
+                     background=BG, foreground=FG, font=FONT)
+        s.configure("TFrame",          background=BG)
+        s.configure("Card.TFrame",     background=BG_CARD,
+                     relief="flat")
+        s.configure("TLabel",          background=BG,     foreground=FG, font=FONT)
+        s.configure("Card.TLabel",     background=BG_CARD, foreground=FG, font=FONT)
+        s.configure("TEntry",          font=FONT, padding=5,
+                     fieldbackground=BG_CARD, foreground=FG,
+                     insertwidth=2, insertcolor=FG)
+        s.configure("TCombobox",       font=FONT,
+                     fieldbackground=BG_CARD, foreground=FG)
+        s.configure("TNotebook",       background=BG, tabmargins=[2, 6, 2, 0])
+        s.configure("TNotebook.Tab",   font=FONT, padding=[16, 7])
+        s.map("TNotebook.Tab",
+              background=[("selected", BG_CARD), ("!selected", BG)],
+              foreground=[("selected", ACCENT),  ("!selected", GREY)])
+        s.configure("Treeview",        font=FONT, rowheight=28,
+                     background=BG_CARD, fieldbackground=BG_CARD)
+        s.configure("Treeview.Heading", font=FONT_BOLD,
+                     background=BG, foreground=FG)
+        s.configure("TSeparator",      background=BORDER)
 
-    def _btn(self, parent, key, color, command, **kw):
-        b = tk.Button(parent, text=self._t(key), font=FONT_BOLD,
-                      bg=color, fg=WHITE, relief="flat",
+    def _btn(self, parent, key, color, command, small=False, **kw):
+        f = FONT if not small else FONT_SMALL
+        b = tk.Button(parent, text=self._t(key), font=f,
+                      bg=color, fg=FG, relief="solid",
                       padx=14, pady=6, cursor="hand2",
-                      activebackground=color, activeforeground=WHITE,
+                      activebackground=color, activeforeground=FG,
+                      bd=1, highlightthickness=0,
+                      highlightbackground=BORDER,
                       command=command, **kw)
         return b
 
+    # ------------------------------------------------------------------ #
+    #  Scrollable frame helper                                             #
+    # ------------------------------------------------------------------ #
+    def _make_scrollable(self, parent, height=160, expand=False):
+        outer = ttk.Frame(parent)
+        outer.pack(fill="both" if expand else "x", expand=expand)
+
+        canvas = tk.Canvas(outer, bg=BG, highlightthickness=0, height=height)
+        sb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=sb.set)
+
+        sb.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        inner = ttk.Frame(canvas)
+        win_id = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        def on_resize(e):
+            canvas.itemconfig(win_id, width=e.width)
+
+        def on_configure(_):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        canvas.bind("<Configure>", on_resize)
+        inner.bind("<Configure>", on_configure)
+
+        def on_mousewheel(e):
+            canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+
+        canvas.bind("<MouseWheel>", on_mousewheel)
+        inner.bind("<MouseWheel>", on_mousewheel)
+
+        return inner
+
+    # ------------------------------------------------------------------ #
+    #  Build                                                               #
+    # ------------------------------------------------------------------ #
     def _build(self):
-        top = ttk.Frame(self.root, padding=(14, 8))
+        top = ttk.Frame(self.root, padding=(16, 10), style="TFrame")
+        top.configure(style="TFrame")
         top.pack(fill="x")
 
-        ttk.Label(top, text="BVP Solver", font=FONT_TITLE).pack(side="left")
+        ttk.Label(top, text="BVP Solver", font=FONT_TITLE,
+                  foreground=ACCENT).pack(side="left")
+
+        close_btn = tk.Button(top, text="✕", font=FONT_BOLD,
+                               bg=BG, fg=FG, relief="solid",
+                               padx=10, pady=4, cursor="hand2", bd=1,
+                               highlightthickness=0, highlightbackground=BORDER,
+                               activebackground=BG, activeforeground=FG,
+                               command=self.root.quit)
+        close_btn.pack(side="right", padx=(6, 0))
 
         self.lang_btn = tk.Button(top, text="EN", font=FONT_BOLD,
-                                   bg=ACCENT, fg=WHITE, relief="flat",
-                                   padx=12, pady=4, cursor="hand2",
-                                   activebackground=ACCENT, activeforeground=WHITE,
+                                   bg=ACCENT, fg=FG, relief="solid",
+                                   padx=12, pady=4, cursor="hand2", bd=1,
+                                   highlightthickness=0, highlightbackground=BORDER,
+                                   activebackground=ACCENT, activeforeground=FG,
                                    command=self._toggle_lang)
         self.lang_btn.pack(side="right")
 
-        ttk.Separator(self.root, orient="horizontal").pack(fill="x")
+        tk.Frame(self.root, height=1, bg=BORDER).pack(fill="x")
 
         self.nb = ttk.Notebook(self.root)
         self.nb.pack(fill="both", expand=True, padx=10, pady=10)
@@ -96,22 +161,31 @@ class App:
     #  Tab 1 — Solution                                                    #
     # ------------------------------------------------------------------ #
     def _build_solution_tab(self):
-        self.tab_solution = ttk.Frame(self.nb, padding=10)
+        self.tab_solution = ttk.Frame(self.nb, padding=12)
         self.nb.add(self.tab_solution, text="")
 
-        left = ttk.Frame(self.tab_solution, padding=(0, 0, 14, 0), width=310)
-        left.pack(side="left", fill="y")
-        left.pack_propagate(False)
+        pane = ttk.PanedWindow(self.tab_solution, orient="horizontal")
+        pane.pack(fill="both", expand=True)
 
-        ttk.Separator(self.tab_solution, orient="vertical").pack(side="left", fill="y")
+        left = ttk.Frame(pane, padding=(0, 0, 8, 0))
+        right = ttk.Frame(pane, padding=(8, 0, 0, 0))
 
-        right = ttk.Frame(self.tab_solution, padding=(14, 0, 0, 0))
-        right.pack(side="left", fill="both", expand=True)
+        pane.add(left,  weight=1)
+        pane.add(right, weight=2)
+
+        def _set_sash():
+            w = pane.winfo_width()
+            if w > 1:
+                pane.sashpos(0, w // 3)
+            else:
+                self.root.after(20, _set_sash)
+        self.root.after(10, _set_sash)
 
         self._build_input_panel(left)
         self._build_output_panel(right)
 
     def _build_input_panel(self, parent):
+        # Interval
         self.lbl_interval = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_interval.pack(anchor="w", pady=(0, 2))
 
@@ -123,106 +197,115 @@ class App:
         self.entry_b = ttk.Entry(ab, width=8)
         self.entry_b.pack(side="left")
 
-        self.lbl_tstar = ttk.Label(parent, font=FONT_BOLD)
-        self.lbl_tstar.pack(anchor="w", pady=(0, 2))
-        self.entry_tstar = ttk.Entry(parent, width=18)
-        self.entry_tstar.pack(fill="x", pady=(0, 10))
+        tk.Frame(parent, height=1, bg=BORDER).pack(fill="x", pady=6)
 
-        self.lbl_equations = ttk.Label(parent, font=FONT_BOLD)
-        self.lbl_equations.pack(anchor="w")
-        self.eq_container, self.eq_rows = self._build_table(parent, self_rows_ref="eq")
+        # t*
+        tstar_row = ttk.Frame(parent)
+        tstar_row.pack(fill="x", pady=(0, 10))
+        self.lbl_tstar = ttk.Label(tstar_row, font=FONT_BOLD)
+        self.lbl_tstar.pack(side="left", padx=(0, 8))
+        self.entry_tstar = ttk.Entry(tstar_row, width=10)
+        self.entry_tstar.pack(side="left")
 
-        ttk.Separator(parent, orient="horizontal").pack(fill="x", pady=8)
+        tk.Frame(parent, height=1, bg=BORDER).pack(fill="x", pady=6)
 
-        self.lbl_boundary = ttk.Label(parent, font=FONT_BOLD)
-        self.lbl_boundary.pack(anchor="w")
-        self.bc_container, self.bc_rows = self._build_table(parent, self_rows_ref="bc")
+        # p0 inline
+        p0_row = ttk.Frame(parent)
+        p0_row.pack(fill="x", pady=(0, 10))
+        self.lbl_p0 = ttk.Label(p0_row, font=FONT_BOLD)
+        self.lbl_p0.pack(side="left", padx=(0, 8))
+        self.entry_p0 = ttk.Entry(p0_row, width=16)
+        self.entry_p0.pack(side="left")
 
-        ttk.Separator(parent, orient="horizontal").pack(fill="x", pady=8)
+        tk.Frame(parent, height=1, bg=BORDER).pack(fill="x", pady=6)
 
-        self.lbl_p0 = ttk.Label(parent, font=FONT_BOLD)
-        self.lbl_p0.pack(anchor="w", pady=(0, 2))
-        self.entry_p0 = ttk.Entry(parent, width=30)
-        self.entry_p0.pack(fill="x", pady=(0, 12))
+        # Equations + BC table header
+        hdr = ttk.Frame(parent)
+        hdr.pack(fill="x")
+        ttk.Label(hdr, text=" ", width=3).pack(side="left")
+        self.lbl_equations = ttk.Label(hdr, font=FONT_BOLD)
+        self.lbl_equations.pack(side="left", padx=(0, 30))
+        self.lbl_boundary = ttk.Label(hdr, font=FONT_BOLD)
+        self.lbl_boundary.pack(side="left")
 
-        btns = ttk.Frame(parent)
-        btns.pack(fill="x")
+        self.eq_bc_scroll = self._make_scrollable(parent, height=90, expand=True)
+        self.eq_bc_rows = []
+        self.eq_bc_container = self.eq_bc_scroll
+        self._add_table_row(self.eq_bc_rows, self.eq_bc_container)
 
-        self.btn_solve = self._btn(btns, "btn_solve", ACCENT, self._on_solve)
-        self.btn_solve.pack(side="left", padx=(0, 6))
-
-        self.btn_save = self._btn(btns, "btn_save", GREEN, self._on_save)
-        self.btn_save.pack(side="left", padx=(0, 4))
-
-        self.btn_load = self._btn(btns, "btn_load", GREY, self._on_load)
-        self.btn_load.pack(side="left")
-
-        self.lbl_status = ttk.Label(parent, font=FONT_SMALL, foreground="#888888")
-        self.lbl_status.pack(anchor="w", pady=(6, 0))
-
-    def _build_table(self, parent, self_rows_ref=None):
-        header = ttk.Frame(parent)
-        header.pack(fill="x", pady=(2, 2))
-
-        rows = []
-        container = ttk.Frame(parent)
-        container.pack(fill="x")
+        # +/− кнопки
+        ctrl_pm = ttk.Frame(parent)
+        ctrl_pm.pack(anchor="w", pady=(4, 0))
+        ctrl_pm.columnconfigure(0, weight=1)
+        ctrl_pm.columnconfigure(1, weight=1)
 
         def on_add():
-            if self_rows_ref == "eq":
-                self._add_row(self.eq_rows, self.eq_container)
-                self._add_row(self.bc_rows, self.bc_container)
-            elif self_rows_ref == "bc":
-                self._add_row(self.bc_rows, self.bc_container)
-                self._add_row(self.eq_rows, self.eq_container)
-            else:
-                self._add_row(rows, container)
+            self._add_table_row(self.eq_bc_rows, self.eq_bc_container)
 
         def on_remove():
-            if self_rows_ref == "eq":
-                self._remove_row(self.eq_rows)
-                self._remove_row(self.bc_rows)
-            elif self_rows_ref == "bc":
-                self._remove_row(self.bc_rows)
-                self._remove_row(self.eq_rows)
+            self._remove_table_row(self.eq_bc_rows)
+
+        tk.Button(ctrl_pm, text="+", font=FONT_BOLD, bg=ACCENT, fg=FG,
+                  relief="solid", padx=10, cursor="hand2", bd=1,
+                  highlightthickness=0, highlightbackground=BORDER,
+                  activebackground=ACCENT, activeforeground=FG,
+                  command=on_add).grid(row=0, column=0, sticky="ew")
+        tk.Button(ctrl_pm, text="−", font=FONT_BOLD, bg=GREY, fg=FG,
+                  relief="solid", padx=10, cursor="hand2", bd=1,
+                  highlightthickness=0, highlightbackground=BORDER,
+                  activebackground=GREY, activeforeground=FG,
+                  command=on_remove).grid(row=0, column=1, sticky="ew", padx=(4, 0))
+
+        # Разделитель — полная ширина
+        tk.Frame(parent, height=1, bg=BORDER).pack(fill="x", pady=6)
+
+        # Кнопка «Решить» — ширина как у ctrl_pm
+        ctrl_solve = tk.Frame(parent, bg=BG)
+        ctrl_solve.pack(anchor="w")
+        ctrl_solve.pack_propagate(False)
+
+        self.btn_solve = self._btn(ctrl_solve, "btn_solve", ACCENT, self._on_solve)
+        self.btn_solve.pack(fill="x", expand=True)
+
+        def _sync_solve():
+            w = ctrl_pm.winfo_reqwidth()
+            h = ctrl_pm.winfo_reqheight()
+            if w > 1:
+                ctrl_solve.config(width=w, height=h)
             else:
-                self._remove_row(rows)
+                self.root.after(20, _sync_solve)
+        self.root.after(10, _sync_solve)
 
-        tk.Button(header, text="+", font=FONT_BOLD, bg=ACCENT, fg=WHITE,
-                  relief="flat", padx=8, cursor="hand2",
-                  activebackground=ACCENT, activeforeground=WHITE,
-                  command=on_add).pack(side="right", padx=2)
-        tk.Button(header, text="−", font=FONT_BOLD, bg=GREY, fg=WHITE,
-                  relief="flat", padx=8, cursor="hand2",
-                  activebackground=GREY, activeforeground=WHITE,
-                  command=on_remove).pack(side="right", padx=2)
+        self.lbl_status = ttk.Label(parent, font=FONT_SMALL, foreground=GREY)
+        self.lbl_status.pack(anchor="w", pady=(6, 0))
 
-        self._add_row(rows, container)
-        return container, rows
-
-    def _add_row(self, rows, container):
+    def _add_table_row(self, rows, container):
         idx = len(rows) + 1
         frame = ttk.Frame(container)
         frame.pack(fill="x", pady=2)
         ttk.Label(frame, text=f"{idx}.", width=3).pack(side="left")
-        entry = ttk.Entry(frame, font=FONT)
-        entry.pack(side="left", fill="x", expand=True)
-        rows.append((frame, entry))
+        eq_entry = ttk.Entry(frame, font=FONT, width=14)
+        eq_entry.pack(side="left", padx=(0, 30))
+        bc_entry = ttk.Entry(frame, font=FONT, width=14)
+        bc_entry.pack(side="left")
+        rows.append((frame, eq_entry, bc_entry))
 
-    def _remove_row(self, rows):
+    def _remove_table_row(self, rows):
         if len(rows) <= 1:
             return
-        frame, _ = rows.pop()
+        frame, _, _ = rows.pop()
         frame.destroy()
 
     def _build_output_panel(self, parent):
         self.lbl_plot = ttk.Label(parent, font=FONT_BOLD)
         self.lbl_plot.pack(anchor="w", pady=(0, 4))
 
-        self.fig = Figure(figsize=(5, 3.5), dpi=96, facecolor=BG)
+        self.fig = Figure(figsize=(5, 3.5), dpi=96, facecolor=BG_CARD)
         self.ax = self.fig.add_subplot(111)
-        self.ax.set_facecolor(WHITE)
-        self.ax.tick_params(labelsize=11)
+        self.ax.set_facecolor(BG_CARD)
+        self.ax.tick_params(labelsize=11, colors=FG)
+        for spine in self.ax.spines.values():
+            spine.set_edgecolor(BORDER)
         self.fig.tight_layout(pad=2)
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=parent)
@@ -251,12 +334,12 @@ class App:
     #  Tab 2 — Parameters                                                  #
     # ------------------------------------------------------------------ #
     def _build_params_tab(self):
-        self.tab_params = ttk.Frame(self.nb, padding=24)
+        self.tab_params = ttk.Frame(self.nb, padding=28)
         self.nb.add(self.tab_params, text="")
 
         def row(r, lbl_attr, combobox=False, default=""):
-            lbl = ttk.Label(self.tab_params)
-            lbl.grid(row=r, column=0, sticky="w", pady=8, padx=(0, 20))
+            lbl = ttk.Label(self.tab_params, font=FONT)
+            lbl.grid(row=r, column=0, sticky="w", pady=10, padx=(0, 24))
             setattr(self, lbl_attr, lbl)
             if combobox:
                 w = ttk.Combobox(self.tab_params, values=METHODS,
@@ -285,7 +368,7 @@ class App:
         inner.place(relx=0.5, rely=0.45, anchor="center")
 
         photo_box = tk.Frame(inner, width=120, height=150,
-                              bg="#d0d8e4", relief="groove", bd=2)
+                              bg=BORDER, relief="flat", bd=1)
         photo_box.pack(pady=(0, 18))
         photo_box.pack_propagate(False)
 
@@ -294,20 +377,14 @@ class App:
             img = Image.open(photo_path)
             img.thumbnail((120, 150))
             self._photo = ImageTk.PhotoImage(img)
-            tk.Label(photo_box, image=self._photo, bg="#d0d8e4").place(relx=0.5, rely=0.5, anchor="center")
+            tk.Label(photo_box, image=self._photo, bg=BORDER).place(
+                relx=0.5, rely=0.5, anchor="center")
         except Exception:
-            tk.Label(photo_box, text="photo", bg="#d0d8e4",
-                     font=FONT_SMALL, fg="#888888").place(relx=0.5, rely=0.5, anchor="center")
+            tk.Label(photo_box, text="photo", bg=BORDER,
+                     font=FONT_SMALL, fg=GREY).place(relx=0.5, rely=0.5, anchor="center")
 
         ttk.Label(inner, text="Дроздов Александр Юрьевич", font=FONT_BOLD).pack()
-        ttk.Label(inner, text="Группа 313", font=FONT).pack(pady=(4, 24))
-
-        self.btn_exit = tk.Button(inner, font=FONT_BOLD,
-                                   bg=RED, fg=WHITE, relief="flat",
-                                   padx=24, pady=8, cursor="hand2",
-                                   activebackground=RED, activeforeground=WHITE,
-                                   command=self.root.quit)
-        self.btn_exit.pack()
+        ttk.Label(inner, text="Группа 313", font=FONT, foreground=GREY).pack(pady=(4, 0))
 
     # ------------------------------------------------------------------ #
     #  Tab 4 — Help                                                        #
@@ -317,23 +394,21 @@ class App:
         self.nb.add(self.tab_help, text="")
 
         self.help_widget = tk.Text(self.tab_help, font=FONT,
-                                    bg=WHITE, relief="flat",
+                                    bg=BG_CARD, fg=FG, relief="flat",
                                     wrap="word", state="disabled",
-                                    padx=16, pady=16)
+                                    padx=20, pady=16,
+                                    insertbackground=FG)
         self.help_widget.pack(fill="both", expand=True)
 
     # ------------------------------------------------------------------ #
     #  Input collection                                                    #
     # ------------------------------------------------------------------ #
     def _collect_input(self):
-        if len(self.eq_rows) != len(self.bc_rows):
-            raise ValueError(self._t("err_count_mismatch"))
-
         a      = float(self.entry_a.get())
         b      = float(self.entry_b.get())
         t_star = float(self.entry_tstar.get()) if self.entry_tstar.get().strip() else a
-        eqs    = [e.get().strip() for _, e in self.eq_rows]
-        bcs    = [e.get().strip() for _, e in self.bc_rows]
+        eqs    = [eq_e.get().strip() for _, eq_e, _ in self.eq_bc_rows]
+        bcs    = [bc_e.get().strip() for _, _, bc_e in self.eq_bc_rows]
         p0     = [float(v.strip()) for v in self.entry_p0.get().split(",")]
         n      = len(eqs)
         vars_  = [f"x{i+1}" for i in range(n)]
@@ -365,7 +440,7 @@ class App:
             messagebox.showerror("", str(e))
             return
 
-        self.lbl_status.config(text=self._t("status_solving"), foreground="#888888")
+        self.lbl_status.config(text=self._t("status_solving"), foreground=GREY)
         self.btn_solve.config(state="disabled")
 
         def worker():
@@ -373,18 +448,21 @@ class App:
                 _, t, x = solve_bvp(**params)
                 self.root.after(0, lambda: self._update_results(t, x, var_names))
             except Exception as e:
-                self.root.after(0, lambda: self._on_error(str(e)))
+                msg = str(e)
+                self.root.after(0, lambda: self._on_error(msg))
 
         threading.Thread(target=worker, daemon=True).start()
 
     def _update_results(self, t, x, var_names):
         self.ax.clear()
-        self.ax.set_facecolor(WHITE)
-        self.ax.tick_params(labelsize=11)
+        self.ax.set_facecolor(BG_CARD)
+        self.ax.tick_params(labelsize=11, colors=FG)
+        for spine in self.ax.spines.values():
+            spine.set_edgecolor(BORDER)
 
         for i, name in enumerate(var_names):
-            color = COLORS[i % len(COLORS)]
-            self.ax.plot(t, x[i], color=color, linewidth=2, label=name)
+            self.ax.plot(t, x[i], color=COLORS[i % len(COLORS)],
+                         linewidth=2, label=name)
 
         self.ax.legend(fontsize=11)
         self.ax.set_xlabel("t", fontsize=12)
@@ -404,74 +482,6 @@ class App:
         self.lbl_status.config(text=self._t("status_error", msg=msg), foreground=RED)
         self.btn_solve.config(state="normal")
 
-    # ------------------------------------------------------------------ #
-    #  Save / Load                                                         #
-    # ------------------------------------------------------------------ #
-    def _on_save(self):
-        try:
-            params, _ = self._collect_input()
-        except ValueError as e:
-            messagebox.showerror("", str(e))
-            return
-
-        path = filedialog.asksaveasfilename(
-            defaultextension=".json", filetypes=[("JSON", "*.json")]
-        )
-        if not path:
-            return
-
-        a, b = params["t_span"]
-        ds = Dataset(
-            equations          = params["f_strings"],
-            boundary_conditions= params["R_strings"],
-            variables          = params["var_names"],
-            t_var              = params["t_name"],
-            a=a, b=b,
-            t_star             = params["t_star"],
-            p0                 = params["p0"],
-            inner_method       = params["inner_method"],
-            inner_rtol         = params["inner_rtol"],
-            inner_atol         = params["inner_atol"],
-            outer_method       = params["outer_method"],
-            outer_rtol         = params["outer_rtol"],
-            outer_atol         = params["outer_atol"],
-            max_iter           = params["max_iter"],
-        )
-        save(ds, path)
-
-    def _on_load(self):
-        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
-        if not path:
-            return
-
-        ds = load(path)
-
-        self.entry_a.delete(0, "end");     self.entry_a.insert(0, str(ds.a))
-        self.entry_b.delete(0, "end");     self.entry_b.insert(0, str(ds.b))
-        self.entry_tstar.delete(0, "end"); self.entry_tstar.insert(0, str(ds.t_star))
-        self.entry_p0.delete(0, "end");    self.entry_p0.insert(0, ", ".join(str(v) for v in ds.p0))
-
-        while len(self.eq_rows) > 1:
-            self._remove_row(self.eq_rows)
-        while len(self.bc_rows) > 1:
-            self._remove_row(self.bc_rows)
-
-        _, e = self.eq_rows[0]; e.delete(0, "end"); e.insert(0, ds.equations[0])
-        _, e = self.bc_rows[0]; e.delete(0, "end"); e.insert(0, ds.boundary_conditions[0])
-
-        for eq in ds.equations[1:]:
-            self._add_row(self.eq_rows, self.eq_container)
-            _, e = self.eq_rows[-1]; e.insert(0, eq)
-
-        for bc in ds.boundary_conditions[1:]:
-            self._add_row(self.bc_rows, self.bc_container)
-            _, e = self.bc_rows[-1]; e.insert(0, bc)
-
-        self.combo_inner.set(ds.inner_method)
-        self.combo_outer.set(ds.outer_method)
-        self.entry_inner_rtol.delete(0, "end"); self.entry_inner_rtol.insert(0, str(ds.inner_rtol))
-        self.entry_outer_rtol.delete(0, "end"); self.entry_outer_rtol.insert(0, str(ds.outer_rtol))
-        self.entry_max_iter.delete(0, "end");   self.entry_max_iter.insert(0, str(ds.max_iter))
 
     # ------------------------------------------------------------------ #
     #  Language                                                            #
@@ -495,18 +505,14 @@ class App:
         self.lbl_boundary.config(text=self._t("boundary"))
         self.lbl_p0.config(text=self._t("p0"))
         self.btn_solve.config(text=self._t("btn_solve"))
-        self.btn_save.config(text=self._t("btn_save"))
-        self.btn_load.config(text=self._t("btn_load"))
         self.lbl_plot.config(text=self._t("result_plot"))
         self.lbl_table.config(text=self._t("result_table"))
 
-        self.lbl_inner_method.config(text=self._t("inner_method"))
         self.lbl_outer_method.config(text=self._t("outer_method"))
-        self.lbl_inner_tol.config(text=self._t("inner_tol"))
+        self.lbl_inner_method.config(text=self._t("inner_method"))
         self.lbl_outer_tol.config(text=self._t("outer_tol"))
+        self.lbl_inner_tol.config(text=self._t("inner_tol"))
         self.lbl_max_iter.config(text=self._t("max_iter"))
-
-        self.btn_exit.config(text=self._t("btn_exit"))
 
         self.help_widget.config(state="normal")
         self.help_widget.delete("1.0", "end")

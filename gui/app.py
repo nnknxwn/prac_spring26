@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QPushButton, QSpinBox, QComboBox, QTabWidget,
     QSplitter, QFrame, QTableWidget, QTableWidgetItem, QHeaderView,
-    QMessageBox, QScrollArea, QTextEdit,
+    QMessageBox, QScrollArea, QTextEdit, QListView, QStyledItemDelegate,
 )
 
 import matplotlib
@@ -216,6 +216,7 @@ QSpinBox::up-button, QSpinBox::down-button {{
 }}
 QComboBox {{
     padding-right: 28px;
+    text-overflow: ellipsis;
 }}
 QComboBox::drop-down {{
     subcontrol-origin: padding;
@@ -741,6 +742,7 @@ class MainWindow(QMainWindow):
         self.lbl_inner_method.setFixedWidth(260)
         self.combo_inner = QComboBox()
         self.combo_inner.setFixedWidth(280)
+        self.combo_inner.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.combo_inner.currentIndexChanged.connect(
             lambda idx: self._on_method_changed("inner"))
 
@@ -787,6 +789,7 @@ class MainWindow(QMainWindow):
         self.lbl_outer_method.setFixedWidth(260)
         self.combo_outer = QComboBox()
         self.combo_outer.setFixedWidth(280)
+        self.combo_outer.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.combo_outer.currentIndexChanged.connect(
             lambda idx: self._on_method_changed("outer"))
 
@@ -1040,27 +1043,35 @@ class MainWindow(QMainWindow):
             self.canvas.draw()
 
     def _apply_combo_palettes(self):
-        """Fix combo dropdown colors for macOS — apply stylesheet directly on view widget."""
+        """Fix combo dropdown colors and remove double-checkmark on macOS."""
         c = self._colors
         all_combos = [self.combo_inner, self.combo_outer,
                       self.combo_inner_tol, self.combo_outer_tol]
         for combo in all_combos:
-            view = combo.view()
-            view.setStyleSheet(f"""
+            # Replace view with plain QListView (no check indicators)
+            lv = QListView()
+            lv.setTextElideMode(Qt.TextElideMode.ElideRight)
+            lv.setStyleSheet(f"""
                 QListView {{
                     background-color: {c["card"]};
                     color: {c["text"]};
                     outline: none;
+                    border: none;
                 }}
                 QListView::item {{
-                    padding: 4px 8px;
+                    padding: 5px 10px;
+                    border: none;
+                }}
+                QListView::item:hover {{
+                    background-color: {c["top_btn_hover"]};
                 }}
                 QListView::item:selected {{
                     background-color: {c["primary"]};
                     color: #ffffff;
                 }}
             """)
-            # Also set on the popup/container widget
+            combo.setView(lv)
+            # Style the popup container
             popup = combo.view().parentWidget()
             if popup:
                 popup.setStyleSheet(f"""

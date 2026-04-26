@@ -752,7 +752,7 @@ class MainWindow(QMainWindow):
         self.combo_inner_tol = QComboBox()
         self.combo_inner_tol.addItems(TOLERANCE_OPTIONS)
         self.combo_inner_tol.setCurrentText("1e-6")
-        self.combo_inner_tol.setFixedWidth(160)
+        self.combo_inner_tol.setFixedWidth(280)
 
         ig.addWidget(self.lbl_inner_method, 0, 0, Qt.AlignmentFlag.AlignVCenter)
         ig.addWidget(self.combo_inner,      0, 1, Qt.AlignmentFlag.AlignVCenter)
@@ -799,13 +799,13 @@ class MainWindow(QMainWindow):
         self.combo_outer_tol = QComboBox()
         self.combo_outer_tol.addItems(TOLERANCE_OPTIONS)
         self.combo_outer_tol.setCurrentText("1e-4")
-        self.combo_outer_tol.setFixedWidth(160)
+        self.combo_outer_tol.setFixedWidth(280)
 
         self.lbl_max_iter = QLabel()
         self.lbl_max_iter.setObjectName("fieldLabel")
         self.lbl_max_iter.setFixedWidth(260)
         self.entry_max_iter = QLineEdit("10")
-        self.entry_max_iter.setFixedWidth(160)
+        self.entry_max_iter.setFixedWidth(280)
 
         og.addWidget(self.lbl_outer_method, 0, 0, Qt.AlignmentFlag.AlignVCenter)
         og.addWidget(self.combo_outer,      0, 1, Qt.AlignmentFlag.AlignVCenter)

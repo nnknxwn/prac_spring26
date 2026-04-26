@@ -9,6 +9,7 @@ STRINGS = {
         "tab_help":       "Помощь",
 
         # Solution tab
+        "dimension":      "Размерность системы",
         "interval":       "Отрезок [a, b]",
         "t_star":         "Точка t*",
         "p0":             "Начальное приближение p₀",
@@ -57,6 +58,7 @@ STRINGS = {
         "tab_help":       "Help",
 
         # Solution tab
+        "dimension":      "System dimension",
         "interval":       "Interval [a, b]",
         "t_star":         "Point t*",
         "p0":             "Initial guess p₀",

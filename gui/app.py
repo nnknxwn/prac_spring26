@@ -41,6 +41,25 @@ METHOD_DISPLAY = {
     },
 }
 
+METHOD_TOOLTIPS = {
+    "ru": {
+        "RK45":   "Явный, нежёсткие задачи. Универсальный выбор.",
+        "RK23":   "Явный, низкий порядок. Быстрый, но менее точный.",
+        "DOP853": "Явный, высокий порядок. Для высокой точности.",
+        "Radau":  "Неявный. Для жёстких систем.",
+        "BDF":    "Неявный. Для жёстких систем с медленной динамикой.",
+        "LSODA":  "Автоматически выбирает между жёстким и нежёстким.",
+    },
+    "en": {
+        "RK45":   "Explicit, non-stiff problems. Universal choice.",
+        "RK23":   "Explicit, low order. Fast but less accurate.",
+        "DOP853": "Explicit, high order. For high accuracy.",
+        "Radau":  "Implicit. For stiff systems.",
+        "BDF":    "Implicit. For stiff systems with slow dynamics.",
+        "LSODA":  "Auto-selects between stiff and non-stiff.",
+    },
+}
+
 # Smart defaults: rtol, atol per method
 METHOD_DEFAULTS = {
     "RK45":   {"rtol": "1e-6",  "atol": "1e-6"},
@@ -193,16 +212,38 @@ QLineEdit:hover, QSpinBox:hover, QComboBox:hover {{
 QSpinBox::up-button, QSpinBox::down-button {{
     width: 18px;
 }}
+QComboBox {{
+    padding-right: 28px;
+}}
 QComboBox::drop-down {{
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 28px;
     border: none;
-    width: 22px;
+    border-left: 1px solid {c["border"]};
+}}
+QComboBox::down-arrow {{
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid {c["muted"]};
+    width: 0;
+    height: 0;
+    margin-right: 6px;
 }}
 QComboBox QAbstractItemView {{
     background: {c["card"]};
     color: {c["text"]};
     border: 1px solid {c["border"]};
+    border-radius: 6px;
+    padding: 4px;
+    outline: none;
     selection-background-color: {c["primary"]};
     selection-color: #ffffff;
+}}
+QComboBox QAbstractItemView::item {{
+    padding: 6px 10px;
+    min-height: 24px;
 }}
 
 QPushButton#primary {{
@@ -804,8 +845,9 @@ class MainWindow(QMainWindow):
         return tab
 
     def _populate_method_combos(self):
-        """Fill method combo boxes with localized display names."""
+        """Fill method combo boxes with localized display names and tooltips."""
         display = METHOD_DISPLAY[self.lang]
+        tooltips = METHOD_TOOLTIPS[self.lang]
         for combo in (self.combo_inner, self.combo_outer):
             current_key = METHOD_KEYS[combo.currentIndex()] if combo.count() > 0 else "RK45"
             combo.blockSignals(True)
@@ -814,6 +856,11 @@ class MainWindow(QMainWindow):
                 combo.addItem(display[key], key)
             combo.setCurrentIndex(METHOD_KEYS.index(current_key))
             combo.blockSignals(False)
+            # Set tooltip for each item in the dropdown
+            for i, key in enumerate(METHOD_KEYS):
+                combo.setItemData(i, tooltips[key], Qt.ItemDataRole.ToolTipRole)
+            # Set combo tooltip to current selection
+            combo.setToolTip(tooltips[current_key])
 
     def _on_method_changed(self, which):
         """Apply smart defaults when method changes."""
@@ -831,6 +878,8 @@ class MainWindow(QMainWindow):
             defaults = METHOD_DEFAULTS[key]
             rtol_entry.setText(defaults["rtol"])
             atol_entry.setText(defaults["atol"])
+        if key and key in METHOD_TOOLTIPS.get(self.lang, {}):
+            combo.setToolTip(METHOD_TOOLTIPS[self.lang][key])
 
     # ------------------------------------------------------------------ #
     #  Tab 3 — Author                                                      #

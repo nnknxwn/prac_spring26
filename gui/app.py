@@ -1040,18 +1040,35 @@ class MainWindow(QMainWindow):
             self.canvas.draw()
 
     def _apply_combo_palettes(self):
-        """Set palette on combo popup views to fix colors without CSS (avoids double-checkmark bug)."""
+        """Fix combo dropdown colors for macOS — apply stylesheet directly on view widget."""
         c = self._colors
         all_combos = [self.combo_inner, self.combo_outer,
                       self.combo_inner_tol, self.combo_outer_tol]
         for combo in all_combos:
             view = combo.view()
-            pal = view.palette()
-            pal.setColor(QPalette.ColorRole.Base, QColor(c["card"]))
-            pal.setColor(QPalette.ColorRole.Text, QColor(c["text"]))
-            pal.setColor(QPalette.ColorRole.Highlight, QColor(c["primary"]))
-            pal.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
-            view.setPalette(pal)
+            view.setStyleSheet(f"""
+                QListView {{
+                    background-color: {c["card"]};
+                    color: {c["text"]};
+                    outline: none;
+                }}
+                QListView::item {{
+                    padding: 4px 8px;
+                }}
+                QListView::item:selected {{
+                    background-color: {c["primary"]};
+                    color: #ffffff;
+                }}
+            """)
+            # Also set on the popup/container widget
+            popup = combo.view().parentWidget()
+            if popup:
+                popup.setStyleSheet(f"""
+                    QWidget {{
+                        background-color: {c["card"]};
+                        border: 1px solid {c["border"]};
+                    }}
+                """)
 
     # ------------------------------------------------------------------ #
     #  Language                                                            #

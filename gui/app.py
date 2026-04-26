@@ -3,7 +3,7 @@ import sys
 import threading
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QColor, QPalette, QPixmap
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QPushButton, QSpinBox, QComboBox, QTabWidget,
@@ -1032,11 +1032,26 @@ class MainWindow(QMainWindow):
         self._colors = LIGHT_COLORS if self.theme == "light" else DARK_COLORS
         self.setStyleSheet(_make_stylesheet(self._colors))
         self.theme_btn.setText("☀" if self.theme == "dark" else "🌙")
+        self._apply_combo_palettes()
         if self._last_result:
             self._draw_plot(*self._last_result)
         else:
             self._style_axes()
             self.canvas.draw()
+
+    def _apply_combo_palettes(self):
+        """Set palette on combo popup views to fix colors without CSS (avoids double-checkmark bug)."""
+        c = self._colors
+        all_combos = [self.combo_inner, self.combo_outer,
+                      self.combo_inner_tol, self.combo_outer_tol]
+        for combo in all_combos:
+            view = combo.view()
+            pal = view.palette()
+            pal.setColor(QPalette.ColorRole.Base, QColor(c["card"]))
+            pal.setColor(QPalette.ColorRole.Text, QColor(c["text"]))
+            pal.setColor(QPalette.ColorRole.Highlight, QColor(c["primary"]))
+            pal.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
+            view.setPalette(pal)
 
     # ------------------------------------------------------------------ #
     #  Language                                                            #

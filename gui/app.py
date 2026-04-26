@@ -227,14 +227,6 @@ QComboBox::down-arrow {{
     image: none;
     border: none;
 }}
-QComboBox QAbstractItemView {{
-    background: {c["card"]};
-    color: {c["text"]};
-    border: 1px solid {c["border"]};
-    outline: none;
-    selection-background-color: {c["primary"]};
-    selection-color: #ffffff;
-}}
 
 QPushButton#primary {{
     background: {c["primary"]};

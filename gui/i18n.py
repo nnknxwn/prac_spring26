@@ -29,8 +29,7 @@ STRINGS = {
         "outer_card_title":  "Внешняя задача",
         "outer_card_desc":   "Метод продолжения по параметру (гомотопия)",
         "param_method":      "Метод интегрирования",
-        "param_rtol":        "Относительная точность (rtol)",
-        "param_atol":        "Абсолютная точность (atol)",
+        "param_tol":         "Точность",
         "param_max_iter":    "Макс. итераций",
 
         # Author tab
@@ -81,8 +80,7 @@ STRINGS = {
         "outer_card_title":  "Outer Problem",
         "outer_card_desc":   "Parameter continuation method (homotopy)",
         "param_method":      "Integration method",
-        "param_rtol":        "Relative tolerance (rtol)",
-        "param_atol":        "Absolute tolerance (atol)",
+        "param_tol":         "Tolerance",
         "param_max_iter":    "Max iterations",
 
         # Author tab

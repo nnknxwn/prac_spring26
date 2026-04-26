@@ -60,17 +60,16 @@ METHOD_TOOLTIPS = {
     },
 }
 
-# Smart defaults: index into TOLERANCE_OPTIONS per method
-# Tolerance options available for selection
+# Smart defaults: tolerance per method (used as both rtol and atol)
 TOLERANCE_OPTIONS = ["1e-2", "1e-3", "1e-4", "1e-6", "1e-8", "1e-9", "1e-10", "1e-12"]
 
 METHOD_DEFAULTS = {
-    "RK45":   {"rtol": "1e-6",  "atol": "1e-6"},
-    "RK23":   {"rtol": "1e-4",  "atol": "1e-4"},
-    "DOP853": {"rtol": "1e-8",  "atol": "1e-8"},
-    "Radau":  {"rtol": "1e-6",  "atol": "1e-9"},
-    "BDF":    {"rtol": "1e-6",  "atol": "1e-9"},
-    "LSODA":  {"rtol": "1e-6",  "atol": "1e-6"},
+    "RK45":   "1e-6",
+    "RK23":   "1e-4",
+    "DOP853": "1e-8",
+    "Radau":  "1e-6",
+    "BDF":    "1e-6",
+    "LSODA":  "1e-6",
 }
 
 COLORS  = ["#2563eb", "#f97316", "#10b981", "#a855f7", "#ef4444", "#06b6d4"]
@@ -227,6 +226,14 @@ QComboBox::drop-down {{
 QComboBox::down-arrow {{
     image: none;
     border: none;
+}}
+QComboBox QAbstractItemView {{
+    background: {c["card"]};
+    color: {c["text"]};
+    border: 1px solid {c["border"]};
+    outline: none;
+    selection-background-color: {c["primary"]};
+    selection-color: #ffffff;
 }}
 
 QPushButton#primary {{
@@ -745,28 +752,18 @@ class MainWindow(QMainWindow):
         self.combo_inner.currentIndexChanged.connect(
             lambda idx: self._on_method_changed("inner"))
 
-        self.lbl_inner_rtol = QLabel()
-        self.lbl_inner_rtol.setObjectName("fieldLabel")
-        self.lbl_inner_rtol.setFixedWidth(260)
-        self.combo_inner_rtol = QComboBox()
-        self.combo_inner_rtol.addItems(TOLERANCE_OPTIONS)
-        self.combo_inner_rtol.setCurrentText("1e-6")
-        self.combo_inner_rtol.setFixedWidth(160)
-
-        self.lbl_inner_atol = QLabel()
-        self.lbl_inner_atol.setObjectName("fieldLabel")
-        self.lbl_inner_atol.setFixedWidth(260)
-        self.combo_inner_atol = QComboBox()
-        self.combo_inner_atol.addItems(TOLERANCE_OPTIONS)
-        self.combo_inner_atol.setCurrentText("1e-6")
-        self.combo_inner_atol.setFixedWidth(160)
+        self.lbl_inner_tol = QLabel()
+        self.lbl_inner_tol.setObjectName("fieldLabel")
+        self.lbl_inner_tol.setFixedWidth(260)
+        self.combo_inner_tol = QComboBox()
+        self.combo_inner_tol.addItems(TOLERANCE_OPTIONS)
+        self.combo_inner_tol.setCurrentText("1e-6")
+        self.combo_inner_tol.setFixedWidth(160)
 
         ig.addWidget(self.lbl_inner_method, 0, 0, Qt.AlignmentFlag.AlignVCenter)
         ig.addWidget(self.combo_inner,      0, 1, Qt.AlignmentFlag.AlignVCenter)
-        ig.addWidget(self.lbl_inner_rtol,    1, 0, Qt.AlignmentFlag.AlignVCenter)
-        ig.addWidget(self.combo_inner_rtol,  1, 1, Qt.AlignmentFlag.AlignVCenter)
-        ig.addWidget(self.lbl_inner_atol,    2, 0, Qt.AlignmentFlag.AlignVCenter)
-        ig.addWidget(self.combo_inner_atol,  2, 1, Qt.AlignmentFlag.AlignVCenter)
+        ig.addWidget(self.lbl_inner_tol,    1, 0, Qt.AlignmentFlag.AlignVCenter)
+        ig.addWidget(self.combo_inner_tol,  1, 1, Qt.AlignmentFlag.AlignVCenter)
         ig.setColumnStretch(2, 1)
 
         iv.addLayout(ig)
@@ -801,21 +798,13 @@ class MainWindow(QMainWindow):
         self.combo_outer.currentIndexChanged.connect(
             lambda idx: self._on_method_changed("outer"))
 
-        self.lbl_outer_rtol = QLabel()
-        self.lbl_outer_rtol.setObjectName("fieldLabel")
-        self.lbl_outer_rtol.setFixedWidth(260)
-        self.combo_outer_rtol = QComboBox()
-        self.combo_outer_rtol.addItems(TOLERANCE_OPTIONS)
-        self.combo_outer_rtol.setCurrentText("1e-4")
-        self.combo_outer_rtol.setFixedWidth(160)
-
-        self.lbl_outer_atol = QLabel()
-        self.lbl_outer_atol.setObjectName("fieldLabel")
-        self.lbl_outer_atol.setFixedWidth(260)
-        self.combo_outer_atol = QComboBox()
-        self.combo_outer_atol.addItems(TOLERANCE_OPTIONS)
-        self.combo_outer_atol.setCurrentText("1e-4")
-        self.combo_outer_atol.setFixedWidth(160)
+        self.lbl_outer_tol = QLabel()
+        self.lbl_outer_tol.setObjectName("fieldLabel")
+        self.lbl_outer_tol.setFixedWidth(260)
+        self.combo_outer_tol = QComboBox()
+        self.combo_outer_tol.addItems(TOLERANCE_OPTIONS)
+        self.combo_outer_tol.setCurrentText("1e-4")
+        self.combo_outer_tol.setFixedWidth(160)
 
         self.lbl_max_iter = QLabel()
         self.lbl_max_iter.setObjectName("fieldLabel")
@@ -825,12 +814,10 @@ class MainWindow(QMainWindow):
 
         og.addWidget(self.lbl_outer_method, 0, 0, Qt.AlignmentFlag.AlignVCenter)
         og.addWidget(self.combo_outer,      0, 1, Qt.AlignmentFlag.AlignVCenter)
-        og.addWidget(self.lbl_outer_rtol,    1, 0, Qt.AlignmentFlag.AlignVCenter)
-        og.addWidget(self.combo_outer_rtol,  1, 1, Qt.AlignmentFlag.AlignVCenter)
-        og.addWidget(self.lbl_outer_atol,    2, 0, Qt.AlignmentFlag.AlignVCenter)
-        og.addWidget(self.combo_outer_atol,  2, 1, Qt.AlignmentFlag.AlignVCenter)
-        og.addWidget(self.lbl_max_iter,     3, 0, Qt.AlignmentFlag.AlignVCenter)
-        og.addWidget(self.entry_max_iter,   3, 1, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.lbl_outer_tol,    1, 0, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.combo_outer_tol,  1, 1, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.lbl_max_iter,     2, 0, Qt.AlignmentFlag.AlignVCenter)
+        og.addWidget(self.entry_max_iter,   2, 1, Qt.AlignmentFlag.AlignVCenter)
         og.setColumnStretch(2, 1)
 
         ov.addLayout(og)
@@ -866,20 +853,16 @@ class MainWindow(QMainWindow):
         """Apply smart defaults when method changes."""
         if which == "inner":
             combo = self.combo_inner
-            rtol_combo = self.combo_inner_rtol
-            atol_combo = self.combo_inner_atol
+            tol_combo = self.combo_inner_tol
         else:
             combo = self.combo_outer
-            rtol_combo = self.combo_outer_rtol
-            atol_combo = self.combo_outer_atol
+            tol_combo = self.combo_outer_tol
 
         key = combo.currentData()
         if key and key in METHOD_DEFAULTS:
-            defaults = METHOD_DEFAULTS[key]
-            idx_r = TOLERANCE_OPTIONS.index(defaults["rtol"]) if defaults["rtol"] in TOLERANCE_OPTIONS else 0
-            idx_a = TOLERANCE_OPTIONS.index(defaults["atol"]) if defaults["atol"] in TOLERANCE_OPTIONS else 0
-            rtol_combo.setCurrentIndex(idx_r)
-            atol_combo.setCurrentIndex(idx_a)
+            default_tol = METHOD_DEFAULTS[key]
+            if default_tol in TOLERANCE_OPTIONS:
+                tol_combo.setCurrentIndex(TOLERANCE_OPTIONS.index(default_tol))
         if key and key in METHOD_TOOLTIPS.get(self.lang, {}):
             combo.setToolTip(METHOD_TOOLTIPS[self.lang][key])
 
@@ -969,10 +952,10 @@ class MainWindow(QMainWindow):
             t_star       = t_star,
             inner_method = self.combo_inner.currentData(),
             outer_method = self.combo_outer.currentData(),
-            inner_rtol   = float(self.combo_inner_rtol.currentText()),
-            inner_atol   = float(self.combo_inner_atol.currentText()),
-            outer_rtol   = float(self.combo_outer_rtol.currentText()),
-            outer_atol   = float(self.combo_outer_atol.currentText()),
+            inner_rtol   = float(self.combo_inner_tol.currentText()),
+            inner_atol   = float(self.combo_inner_tol.currentText()),
+            outer_rtol   = float(self.combo_outer_tol.currentText()),
+            outer_atol   = float(self.combo_outer_tol.currentText()),
             max_iter     = int(self.entry_max_iter.text()),
         ), vars_
 
@@ -1096,10 +1079,8 @@ class MainWindow(QMainWindow):
         self.lbl_outer_desc.setText(self._t("outer_card_desc"))
         self.lbl_inner_method.setText(self._t("param_method"))
         self.lbl_outer_method.setText(self._t("param_method"))
-        self.lbl_inner_rtol.setText(self._t("param_rtol"))
-        self.lbl_inner_atol.setText(self._t("param_atol"))
-        self.lbl_outer_rtol.setText(self._t("param_rtol"))
-        self.lbl_outer_atol.setText(self._t("param_atol"))
+        self.lbl_inner_tol.setText(self._t("param_tol"))
+        self.lbl_outer_tol.setText(self._t("param_tol"))
         self.lbl_max_iter.setText(self._t("param_max_iter"))
         self._populate_method_combos()
 

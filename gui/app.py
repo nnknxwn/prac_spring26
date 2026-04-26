@@ -1074,9 +1074,13 @@ class MainWindow(QMainWindow):
                 }}
             """)
             combo.setView(lv)
-            # Style the popup container
+            # Force popup width to match the combo box
+            w = combo.width() if combo.width() > 0 else 280
+            lv.setMinimumWidth(w)
             popup = combo.view().parentWidget()
             if popup:
+                popup.setMinimumWidth(w)
+                popup.setMaximumWidth(w)
                 popup.setStyleSheet(f"""
                     QWidget {{
                         background-color: {c["card"]};

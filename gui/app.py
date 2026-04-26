@@ -235,8 +235,9 @@ QComboBox QAbstractItemView {{
     background: {c["card"]};
     color: {c["text"]};
     border: 1px solid {c["border"]};
-    border-radius: 6px;
-    padding: 4px;
+    border-radius: 0px;
+    padding: 4px 0px;
+    margin: 0px;
     outline: none;
     selection-background-color: {c["primary"]};
     selection-color: #ffffff;
@@ -752,21 +753,25 @@ class MainWindow(QMainWindow):
         ig = QGridLayout()
         ig.setHorizontalSpacing(24)
         ig.setVerticalSpacing(14)
+        ig.setColumnMinimumWidth(0, 260)
 
         self.lbl_inner_method = QLabel()
         self.lbl_inner_method.setObjectName("fieldLabel")
+        self.lbl_inner_method.setFixedWidth(260)
         self.combo_inner = QComboBox()
-        self.combo_inner.setMinimumWidth(260)
+        self.combo_inner.setFixedWidth(280)
         self.combo_inner.currentIndexChanged.connect(
             lambda idx: self._on_method_changed("inner"))
 
         self.lbl_inner_rtol = QLabel()
         self.lbl_inner_rtol.setObjectName("fieldLabel")
+        self.lbl_inner_rtol.setFixedWidth(260)
         self.entry_inner_rtol = QLineEdit("1e-6")
         self.entry_inner_rtol.setFixedWidth(160)
 
         self.lbl_inner_atol = QLabel()
         self.lbl_inner_atol.setObjectName("fieldLabel")
+        self.lbl_inner_atol.setFixedWidth(260)
         self.entry_inner_atol = QLineEdit("1e-6")
         self.entry_inner_atol.setFixedWidth(160)
 
@@ -800,26 +805,31 @@ class MainWindow(QMainWindow):
         og = QGridLayout()
         og.setHorizontalSpacing(24)
         og.setVerticalSpacing(14)
+        og.setColumnMinimumWidth(0, 260)
 
         self.lbl_outer_method = QLabel()
         self.lbl_outer_method.setObjectName("fieldLabel")
+        self.lbl_outer_method.setFixedWidth(260)
         self.combo_outer = QComboBox()
-        self.combo_outer.setMinimumWidth(260)
+        self.combo_outer.setFixedWidth(280)
         self.combo_outer.currentIndexChanged.connect(
             lambda idx: self._on_method_changed("outer"))
 
         self.lbl_outer_rtol = QLabel()
         self.lbl_outer_rtol.setObjectName("fieldLabel")
+        self.lbl_outer_rtol.setFixedWidth(260)
         self.entry_outer_rtol = QLineEdit("1e-4")
         self.entry_outer_rtol.setFixedWidth(160)
 
         self.lbl_outer_atol = QLabel()
         self.lbl_outer_atol.setObjectName("fieldLabel")
+        self.lbl_outer_atol.setFixedWidth(260)
         self.entry_outer_atol = QLineEdit("1e-4")
         self.entry_outer_atol.setFixedWidth(160)
 
         self.lbl_max_iter = QLabel()
         self.lbl_max_iter.setObjectName("fieldLabel")
+        self.lbl_max_iter.setFixedWidth(260)
         self.entry_max_iter = QLineEdit("10")
         self.entry_max_iter.setFixedWidth(160)
 

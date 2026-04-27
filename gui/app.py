@@ -356,6 +356,7 @@ class MainWindow(QMainWindow):
         self._status_key = None
         self._status_kwargs = {}
         self._status_object_name = "status"
+        self._show_markers = False
         self.eq_entries = []
         self.bc_entries = []
         self.p0_entries = []
@@ -626,6 +627,15 @@ class MainWindow(QMainWindow):
         self.lbl_plot.setObjectName("section")
         plot_header.addWidget(self.lbl_plot)
         plot_header.addStretch()
+
+        self.btn_markers = QPushButton("•")
+        self.btn_markers.setObjectName("topBtn")
+        self.btn_markers.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_markers.setToolTip("Show/hide grid points")
+        self.btn_markers.setCheckable(True)
+        self.btn_markers.setChecked(False)
+        self.btn_markers.clicked.connect(self._toggle_markers)
+        plot_header.addWidget(self.btn_markers)
 
         self.btn_colors = QPushButton("🎨")
         self.btn_colors.setObjectName("topBtn")
@@ -1021,7 +1031,11 @@ class MainWindow(QMainWindow):
 
         for i, name in enumerate(var_names):
             color = self._custom_colors[i % len(self._custom_colors)]
-            self.ax.plot(t, x[i], color=color, linewidth=2, label=name)
+            marker = 'o' if self._show_markers else None
+            ms = 4 if self._show_markers else None
+            self.ax.plot(t, x[i], color=color, linewidth=2, label=name,
+                         marker=marker, markersize=ms, markerfacecolor=color,
+                         markeredgecolor=color)
 
         legend = self.ax.legend(fontsize=10, frameon=False)
         if legend:
@@ -1030,6 +1044,12 @@ class MainWindow(QMainWindow):
         self.ax.set_xlabel("t", fontsize=11, color=c["field_label"])
         self.fig.tight_layout(pad=1.5)
         self.canvas.draw()
+
+    def _toggle_markers(self):
+        """Toggle grid point markers on the plot."""
+        self._show_markers = self.btn_markers.isChecked()
+        if self._last_result:
+            self._draw_plot(*self._last_result)
 
     def _show_color_menu(self):
         """Show menu to pick color for each variable."""

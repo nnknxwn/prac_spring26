@@ -922,10 +922,10 @@ class MainWindow(QMainWindow):
         photo_lbl = QLabel()
         photo_lbl.setObjectName("photoBox")
         photo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        photo_lbl.setFixedSize(160, 200)
+        photo_lbl.setFixedSize(240, 300)
         if os.path.exists(photo_path):
             pix = QPixmap(photo_path).scaled(
-                160, 200,
+                240, 300,
                 Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                 Qt.TransformationMode.SmoothTransformation,
             )

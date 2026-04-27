@@ -673,6 +673,23 @@ class MainWindow(QMainWindow):
                           lambda i: f"R{i+1} =", default="")
         self._adjust_rows(self.p0_entries, self.p0_layout, n,
                           lambda i: f"p{i+1}₀ =", default="0")
+        self._setup_tab_order()
+
+    def _setup_tab_order(self):
+        """Set logical tab order: n → equations → boundary → a → b → t* → p0 → solve."""
+        widgets = [self.spin_n]
+        for _, entry in self.eq_entries:
+            widgets.append(entry)
+        for _, entry in self.bc_entries:
+            widgets.append(entry)
+        widgets.append(self.entry_a)
+        widgets.append(self.entry_b)
+        widgets.append(self.entry_tstar)
+        for _, entry in self.p0_entries:
+            widgets.append(entry)
+        widgets.append(self.btn_solve)
+        for i in range(len(widgets) - 1):
+            QWidget.setTabOrder(widgets[i], widgets[i + 1])
 
     def _adjust_rows(self, entries, layout, n, label_fn, default):
         while len(entries) < n:

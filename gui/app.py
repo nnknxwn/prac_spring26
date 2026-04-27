@@ -953,18 +953,45 @@ class MainWindow(QMainWindow):
     def _build_help_tab(self):
         tab = QWidget()
         outer = QVBoxLayout(tab)
-        outer.setContentsMargins(40, 30, 40, 30)
+        outer.setContentsMargins(20, 20, 20, 20)
 
-        card = self._card()
-        cv = QVBoxLayout(card)
-        cv.setContentsMargins(28, 22, 28, 22)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
 
-        self.help_widget = QTextEdit()
-        self.help_widget.setObjectName("help")
-        self.help_widget.setReadOnly(True)
-        cv.addWidget(self.help_widget)
+        content = QWidget()
+        cv = QVBoxLayout(content)
+        cv.setContentsMargins(0, 0, 0, 0)
+        cv.setSpacing(16)
 
-        outer.addWidget(card)
+        # We'll create multiple cards for each help section
+        self._help_cards = []
+        section_keys = [
+            "help_intro", "help_input", "help_params",
+            "help_plot", "help_example", "help_shortcuts"
+        ]
+        for key in section_keys:
+            card = self._card()
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(24, 20, 24, 20)
+            card_layout.setSpacing(8)
+
+            title_lbl = QLabel()
+            title_lbl.setObjectName("section")
+            card_layout.addWidget(title_lbl)
+
+            body_lbl = QLabel()
+            body_lbl.setObjectName("fieldLabel")
+            body_lbl.setWordWrap(True)
+            body_lbl.setTextFormat(Qt.TextFormat.RichText)
+            card_layout.addWidget(body_lbl)
+
+            cv.addWidget(card)
+            self._help_cards.append((key, title_lbl, body_lbl))
+
+        cv.addStretch()
+        scroll.setWidget(content)
+        outer.addWidget(scroll)
         return tab
 
     # ------------------------------------------------------------------ #
@@ -1215,7 +1242,10 @@ class MainWindow(QMainWindow):
         self.lbl_max_iter.setText(self._t("param_max_iter"))
         self._populate_method_combos()
 
-        self.help_widget.setPlainText(self._t("help_text"))
+        # Update help cards
+        for key, title_lbl, body_lbl in self._help_cards:
+            title_lbl.setText(self._t(key + "_title"))
+            body_lbl.setText(self._t(key + "_body"))
 
         # Update status text on language change
         if self._status_key:

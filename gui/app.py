@@ -3,12 +3,13 @@ import sys
 import threading
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPalette, QPixmap
+from PyQt6.QtGui import QAction, QColor, QPalette, QPixmap
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QPushButton, QSpinBox, QComboBox, QTabWidget,
     QSplitter, QFrame, QTableWidget, QTableWidgetItem, QHeaderView,
     QMessageBox, QScrollArea, QTextEdit, QListView, QStyledItemDelegate,
+    QColorDialog,
 )
 
 import matplotlib
@@ -351,6 +352,7 @@ class MainWindow(QMainWindow):
         self.theme = "light"
         self._colors = LIGHT_COLORS
         self._last_result = None
+        self._custom_colors = list(COLORS)  # mutable copy of plot colors
         self.eq_entries = []
         self.bc_entries = []
         self.p0_entries = []
@@ -616,9 +618,19 @@ class MainWindow(QMainWindow):
         pv.setContentsMargins(16, 14, 16, 14)
         pv.setSpacing(8)
 
+        plot_header = QHBoxLayout()
         self.lbl_plot = QLabel()
         self.lbl_plot.setObjectName("section")
-        pv.addWidget(self.lbl_plot)
+        plot_header.addWidget(self.lbl_plot)
+        plot_header.addStretch()
+
+        self.btn_colors = QPushButton("🎨")
+        self.btn_colors.setObjectName("topBtn")
+        self.btn_colors.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_colors.setToolTip("Colors")
+        self.btn_colors.clicked.connect(self._show_color_menu)
+        plot_header.addWidget(self.btn_colors)
+        pv.addLayout(plot_header)
 
         self.fig = Figure(figsize=(6, 4), dpi=100)
         self.ax = self.fig.add_subplot(111)
@@ -1005,8 +1017,8 @@ class MainWindow(QMainWindow):
         self._style_axes()
 
         for i, name in enumerate(var_names):
-            self.ax.plot(t, x[i], color=COLORS[i % len(COLORS)],
-                         linewidth=2, label=name)
+            color = self._custom_colors[i % len(self._custom_colors)]
+            self.ax.plot(t, x[i], color=color, linewidth=2, label=name)
 
         legend = self.ax.legend(fontsize=10, frameon=False)
         if legend:
@@ -1015,6 +1027,38 @@ class MainWindow(QMainWindow):
         self.ax.set_xlabel("t", fontsize=11, color=c["field_label"])
         self.fig.tight_layout(pad=1.5)
         self.canvas.draw()
+
+    def _show_color_menu(self):
+        """Show menu to pick color for each variable."""
+        if not self._last_result:
+            return
+        _, _, var_names = self._last_result
+        from PyQt6.QtWidgets import QMenu
+        menu = QMenu(self)
+        for i, name in enumerate(var_names):
+            action = menu.addAction(f"  {name}")
+            color = self._custom_colors[i % len(self._custom_colors)]
+            action.setIcon(self._color_icon(color))
+            action.triggered.connect(lambda checked, idx=i: self._pick_color(idx))
+        menu.exec(self.btn_colors.mapToGlobal(self.btn_colors.rect().bottomLeft()))
+
+    def _pick_color(self, idx):
+        """Open color dialog for variable at index."""
+        current = QColor(self._custom_colors[idx % len(self._custom_colors)])
+        color = QColorDialog.getColor(current, self, "")
+        if color.isValid():
+            while len(self._custom_colors) <= idx:
+                self._custom_colors.append(COLORS[len(self._custom_colors) % len(COLORS)])
+            self._custom_colors[idx] = color.name()
+            if self._last_result:
+                self._draw_plot(*self._last_result)
+
+    def _color_icon(self, color_hex):
+        """Create a small colored square icon."""
+        from PyQt6.QtGui import QPixmap, QIcon
+        pix = QPixmap(14, 14)
+        pix.fill(QColor(color_hex))
+        return QIcon(pix)
 
     def _fill_table(self, t, x, var_names):
         cols = ["t"] + var_names

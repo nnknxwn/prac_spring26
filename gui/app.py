@@ -684,6 +684,8 @@ class MainWindow(QMainWindow):
         for spine in self.ax.spines.values():
             spine.set_edgecolor(c["border"])
         self.ax.grid(True, color=c["grid_line"], linewidth=0.8)
+        self.ax.axhline(0, color=c["muted"], linewidth=0.9, zorder=1)
+        self.ax.axvline(0, color=c["muted"], linewidth=0.9, zorder=1)
 
     # ------------------------------------------------------------------ #
     #  Dynamic n-fields                                                    #

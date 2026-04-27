@@ -216,7 +216,6 @@ QSpinBox::up-button, QSpinBox::down-button {{
 }}
 QComboBox {{
     padding-right: 28px;
-    text-overflow: ellipsis;
 }}
 QComboBox::drop-down {{
     subcontrol-origin: padding;

@@ -3,12 +3,12 @@ import sys
 import threading
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QAction, QColor, QPalette, QPixmap
+from PyQt6.QtGui import QColor, QPixmap
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QPushButton, QSpinBox, QComboBox, QTabWidget,
     QSplitter, QFrame, QTableWidget, QTableWidgetItem, QHeaderView,
-    QMessageBox, QScrollArea, QTextEdit, QListView, QStyledItemDelegate,
+    QMessageBox, QScrollArea, QTextEdit, QListView,
     QColorDialog,
 )
 

@@ -15,11 +15,7 @@ STRINGS = {
         "p0":             "Начальное приближение p₀",
         "equations":      "Уравнения  ẋ = f(t, x)",
         "boundary":       "Краевые условия  R(x(a), x(b)) = 0",
-        "btn_add":        "+",
-        "btn_remove":     "−",
         "btn_solve":      "Решить",
-        "btn_save":       "Сохранить",
-        "btn_load":       "Загрузить",
         "result_plot":    "График решения",
         "result_table":   "Таблица значений",
 
@@ -31,9 +27,6 @@ STRINGS = {
         "param_method":      "Метод интегрирования",
         "param_tol":         "Точность",
         "param_max_iter":    "Макс. итераций",
-
-        # Author tab
-        "btn_exit":       "Выход",
 
         # Help tab — sections
         "help_intro_title": "О программе",
@@ -99,7 +92,6 @@ STRINGS = {
 
         # Errors / messages
         "err_count_mismatch": "Число уравнений должно совпадать с числом краевых условий.",
-        "err_not_implemented": "Решатель пока не реализован.",
         "status_solving":     "Вычисление...",
         "status_done":        "Готово.",
         "status_error":       "Ошибка: {msg}",
@@ -119,11 +111,7 @@ STRINGS = {
         "p0":             "Initial guess p₀",
         "equations":      "Equations  ẋ = f(t, x)",
         "boundary":       "Boundary conditions  R(x(a), x(b)) = 0",
-        "btn_add":        "+",
-        "btn_remove":     "−",
         "btn_solve":      "Solve",
-        "btn_save":       "Save",
-        "btn_load":       "Load",
         "result_plot":    "Solution plot",
         "result_table":   "Value table",
 
@@ -135,9 +123,6 @@ STRINGS = {
         "param_method":      "Integration method",
         "param_tol":         "Tolerance",
         "param_max_iter":    "Max iterations",
-
-        # Author tab
-        "btn_exit":       "Exit",
 
         # Help tab — sections
         "help_intro_title": "About",
@@ -203,7 +188,6 @@ STRINGS = {
 
         # Errors / messages
         "err_count_mismatch": "Number of equations must equal number of boundary conditions.",
-        "err_not_implemented": "Solver is not implemented yet.",
         "status_solving":     "Computing...",
         "status_done":        "Done.",
         "status_error":       "Error: {msg}",

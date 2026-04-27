@@ -353,6 +353,9 @@ class MainWindow(QMainWindow):
         self._colors = LIGHT_COLORS
         self._last_result = None
         self._custom_colors = list(COLORS)  # mutable copy of plot colors
+        self._status_key = None
+        self._status_kwargs = {}
+        self._status_object_name = "status"
         self.eq_entries = []
         self.bc_entries = []
         self.p0_entries = []
@@ -992,7 +995,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "", str(e))
             return
 
-        self._set_status(self._t("status_solving"), "status")
+        self._set_status(self._t("status_solving"), "status", key="status_solving")
         self.btn_solve.setEnabled(False)
 
         def worker():
@@ -1008,7 +1011,7 @@ class MainWindow(QMainWindow):
         self._last_result = (t, x, var_names)
         self._draw_plot(t, x, var_names)
         self._fill_table(t, x, var_names)
-        self._set_status(self._t("status_done"), "statusOk")
+        self._set_status(self._t("status_done"), "statusOk", key="status_done")
         self.btn_solve.setEnabled(True)
 
     def _draw_plot(self, t, x, var_names):
@@ -1075,10 +1078,13 @@ class MainWindow(QMainWindow):
                 self.table.setItem(r, i + 1, QTableWidgetItem(f"{x[i][j]:.6f}"))
 
     def _on_error(self, msg):
-        self._set_status(self._t("status_error", msg=msg), "statusErr")
+        self._set_status(self._t("status_error", msg=msg), "statusErr", key="status_error", msg=msg)
         self.btn_solve.setEnabled(True)
 
-    def _set_status(self, text, object_name):
+    def _set_status(self, text, object_name, key=None, **kwargs):
+        self._status_key = key
+        self._status_kwargs = kwargs
+        self._status_object_name = object_name
         self.lbl_status.setText(text)
         self.lbl_status.setObjectName(object_name)
         self.lbl_status.style().unpolish(self.lbl_status)
@@ -1188,6 +1194,10 @@ class MainWindow(QMainWindow):
         self._populate_method_combos()
 
         self.help_widget.setPlainText(self._t("help_text"))
+
+        # Update status text on language change
+        if self._status_key:
+            self.lbl_status.setText(self._t(self._status_key, **self._status_kwargs))
 
 
 class App:

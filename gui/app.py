@@ -58,7 +58,7 @@ METHOD_DEFAULTS = {
     "LSODA":  "1e-6",
 }
 
-COLORS  = ["#2554d6", "#f97316", "#10b981", "#a855f7", "#ef4444", "#06b6d4"]
+COLORS  = ["#2563eb", "#f97316", "#10b981", "#a855f7", "#ef4444", "#06b6d4"]
 
 
 LIGHT_COLORS = {
@@ -347,13 +347,9 @@ QMenu {{
 }}
 QMenu::item {{
     background: transparent;
-    padding: 6px 14px 6px 10px;
+    padding: 6px 14px;
     border-radius: 6px;
     margin: 2px 4px;
-}}
-QMenu::icon {{
-    padding-left: 6px;
-    padding-right: 4px;
 }}
 QMenu::item:selected {{
     background-color: {c["primary"]};

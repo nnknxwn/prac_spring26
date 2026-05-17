@@ -409,7 +409,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ #
     def _build(self):
         self.setWindowTitle("BVP Solver")
-        self.resize(1200, 780)
+        self.resize(1350, 850)
         self.setMinimumSize(1000, 660)
 
         font = QApplication.instance().font()

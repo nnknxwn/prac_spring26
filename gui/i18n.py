@@ -22,6 +22,18 @@ STRINGS = {
         "result_plot":    "График решения",
         "result_table":   "Таблица значений",
 
+        # Library / Save / Load
+        "btn_library":    "📚 Примеры",
+        "btn_save":       "💾 Сохранить",
+        "btn_load":       "📂 Открыть",
+        "lib_tutorial":   "Учебные",
+        "lib_article":    "Из статьи (Аввакумов, Киселев, 2006)",
+        "save_dialog":    "Сохранить задачу",
+        "load_dialog":    "Открыть задачу",
+        "json_filter":    "JSON файлы (*.json)",
+        "save_error":     "Не удалось сохранить: {msg}",
+        "load_error":     "Не удалось загрузить: {msg}",
+
         # Parameters tab — cards
         "inner_card_title":  "Внутренняя задача",
         "inner_card_desc":   "Интегрирование физической системы ОДУ",
@@ -120,6 +132,18 @@ STRINGS = {
         "btn_solve":      "Solve",
         "result_plot":    "Solution plot",
         "result_table":   "Value table",
+
+        # Library / Save / Load
+        "btn_library":    "📚 Examples",
+        "btn_save":       "💾 Save",
+        "btn_load":       "📂 Open",
+        "lib_tutorial":   "Tutorial",
+        "lib_article":    "From article (Avvakumov, Kiselev, 2006)",
+        "save_dialog":    "Save problem",
+        "load_dialog":    "Open problem",
+        "json_filter":    "JSON files (*.json)",
+        "save_error":     "Save failed: {msg}",
+        "load_error":     "Load failed: {msg}",
 
         # Parameters tab — cards
         "inner_card_title":  "Inner Problem",

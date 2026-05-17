@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QSpinBox, QComboBox, QTabWidget,
     QSplitter, QFrame, QTableWidget, QTableWidgetItem, QHeaderView,
     QMessageBox, QScrollArea, QTextEdit, QListView,
-    QColorDialog,
+    QColorDialog, QFileDialog,
 )
 
 import matplotlib
@@ -595,6 +595,33 @@ class MainWindow(QMainWindow):
         pv.addLayout(self.p0_layout)
         v.addWidget(self.p0_card)
 
+        # ---- Library / Save / Load row ----
+        toolbar_row = QHBoxLayout()
+        toolbar_row.setSpacing(8)
+
+        self.btn_library = QPushButton()
+        self.btn_library.setObjectName("topBtn")
+        self.btn_library.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_library.setMinimumHeight(34)
+        self.btn_library.clicked.connect(self._show_library_menu)
+
+        self.btn_save = QPushButton()
+        self.btn_save.setObjectName("topBtn")
+        self.btn_save.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_save.setMinimumHeight(34)
+        self.btn_save.clicked.connect(self._on_save)
+
+        self.btn_load = QPushButton()
+        self.btn_load.setObjectName("topBtn")
+        self.btn_load.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_load.setMinimumHeight(34)
+        self.btn_load.clicked.connect(self._on_load)
+
+        toolbar_row.addWidget(self.btn_library, stretch=1)
+        toolbar_row.addWidget(self.btn_load,    stretch=1)
+        toolbar_row.addWidget(self.btn_save,    stretch=1)
+        v.addLayout(toolbar_row)
+
         # ---- Solve button + status ----
         self.btn_solve = QPushButton()
         self.btn_solve.setObjectName("primary")
@@ -1081,6 +1108,124 @@ class MainWindow(QMainWindow):
         if self._last_result:
             self._draw_plot(*self._last_result)
 
+    # ------------------------------------------------------------------ #
+    #  Library / Save / Load                                              #
+    # ------------------------------------------------------------------ #
+    def _show_library_menu(self):
+        """Show menu with built-in examples grouped by category."""
+        from PyQt6.QtWidgets import QMenu
+        from examples.library import EXAMPLES
+
+        menu = QMenu(self)
+        name_key = "name_ru" if self.lang == "ru" else "name_en"
+        source_key = "source_ru" if self.lang == "ru" else "source_en"
+
+        categories = [
+            ("tutorial", self._t("lib_tutorial")),
+            ("article",  self._t("lib_article")),
+        ]
+        for cat_key, cat_label in categories:
+            sub = menu.addMenu(cat_label)
+            for ex in EXAMPLES:
+                if ex["category"] != cat_key:
+                    continue
+                action = sub.addAction(ex[name_key])
+                action.setToolTip(ex[source_key])
+                action.triggered.connect(
+                    lambda checked, eid=ex["id"]: self._apply_example(eid))
+
+        menu.exec(self.btn_library.mapToGlobal(self.btn_library.rect().bottomLeft()))
+
+    def _apply_example(self, example_id):
+        """Load example by id into the form fields."""
+        from examples.library import get_example
+        ex = get_example(example_id)
+        if ex is None:
+            return
+        self._load_state(ex)
+
+    def _on_save(self):
+        """Save current problem state to JSON file."""
+        path, _ = QFileDialog.getSaveFileName(
+            self, self._t("save_dialog"), "problem.json", self._t("json_filter"))
+        if not path:
+            return
+        try:
+            import json
+            state = self._serialize_state()
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            QMessageBox.critical(self, "", self._t("save_error", msg=str(e)))
+
+    def _on_load(self):
+        """Load problem state from JSON file."""
+        path, _ = QFileDialog.getOpenFileName(
+            self, self._t("load_dialog"), "", self._t("json_filter"))
+        if not path:
+            return
+        try:
+            import json
+            with open(path, "r", encoding="utf-8") as f:
+                state = json.load(f)
+            self._load_state(state)
+        except Exception as e:
+            QMessageBox.critical(self, "", self._t("load_error", msg=str(e)))
+
+    def _serialize_state(self):
+        """Collect current form state into a JSON-serializable dict."""
+        return {
+            "n":             self.spin_n.value(),
+            "equations":     [e.text() for _, e in self.eq_entries],
+            "boundary":      [e.text() for _, e in self.bc_entries],
+            "a":             float(self.entry_a.text()),
+            "b":             float(self.entry_b.text()),
+            "t_star":        float(self.entry_tstar.text()) if self.entry_tstar.text().strip() else 0.0,
+            "p0":            [float(e.text()) for _, e in self.p0_entries],
+            "inner_method":  self.combo_inner.currentData(),
+            "outer_method":  self.combo_outer.currentData(),
+            "inner_tol":     self.combo_inner_tol.currentText(),
+            "outer_tol":     self.combo_outer_tol.currentText(),
+            "max_iter":      int(self.entry_max_iter.text()),
+        }
+
+    def _load_state(self, state):
+        """Apply a state dict to the form (used by both library and file load)."""
+        n = int(state["n"])
+        self.spin_n.setValue(n)
+        self._sync_n_fields(n)
+
+        for (_, entry), val in zip(self.eq_entries, state.get("equations", [])):
+            entry.setText(str(val))
+        for (_, entry), val in zip(self.bc_entries, state.get("boundary", [])):
+            entry.setText(str(val))
+        for (_, entry), val in zip(self.p0_entries, state.get("p0", [])):
+            entry.setText(str(val))
+
+        self.entry_a.setText(str(state.get("a", 0.0)))
+        self.entry_b.setText(str(state.get("b", 1.0)))
+        self.entry_tstar.setText(str(state.get("t_star", 0.0)))
+
+        for combo, key in [(self.combo_inner, "inner_method"),
+                           (self.combo_outer, "outer_method")]:
+            method = state.get(key)
+            if method:
+                for i in range(combo.count()):
+                    if combo.itemData(i) == method:
+                        combo.setCurrentIndex(i)
+                        break
+
+        for combo, key in [(self.combo_inner_tol, "inner_tol"),
+                           (self.combo_outer_tol, "outer_tol")]:
+            tol = state.get(key)
+            if tol is not None:
+                tol_str = str(tol) if not isinstance(tol, str) else tol
+                idx = combo.findText(tol_str)
+                if idx >= 0:
+                    combo.setCurrentIndex(idx)
+
+        self.entry_max_iter.setText(str(state.get("max_iter", 10)))
+
     def _show_color_menu(self):
         """Show menu to pick color for each variable."""
         if not self._last_result:
@@ -1230,6 +1375,9 @@ class MainWindow(QMainWindow):
         self.lbl_boundary.setText(self._t("boundary"))
         self.lbl_p0.setText(self._t("p0"))
         self.btn_solve.setText(self._t("btn_solve"))
+        self.btn_library.setText(self._t("btn_library"))
+        self.btn_save.setText(self._t("btn_save"))
+        self.btn_load.setText(self._t("btn_load"))
         self.lbl_plot.setText(self._t("result_plot"))
         self.lbl_table.setText(self._t("result_table"))
 

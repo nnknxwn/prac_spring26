@@ -104,6 +104,38 @@ STRINGS = {
             "• <b>🌙/☀</b> — смена темы (светлая/тёмная)<br>"
             "• <b>EN/RU</b> — смена языка интерфейса"
         ),
+        "help_json_title": "Создание собственной задачи",
+        "help_json_body": (
+            "Можно сохранить текущую задачу в JSON через кнопку «💾 Сохранить» "
+            "и открыть её позже через «📂 Открыть».<br><br>"
+            "Можно создать JSON-файл вручную в любом текстовом редакторе:<br><br>"
+            "<pre style='font-size:11px'>"
+            "{<br>"
+            "&nbsp;&nbsp;\"n\": 2,<br>"
+            "&nbsp;&nbsp;\"equations\": [\"x2\", \"0\"],<br>"
+            "&nbsp;&nbsp;\"boundary\": [\"xa0\", \"xb0 - 1\"],<br>"
+            "&nbsp;&nbsp;\"a\": 0.0,<br>"
+            "&nbsp;&nbsp;\"b\": 1.0,<br>"
+            "&nbsp;&nbsp;\"t_star\": 0.0,<br>"
+            "&nbsp;&nbsp;\"p0\": [0.0, 1.0],<br>"
+            "&nbsp;&nbsp;\"inner_method\": \"RK45\",<br>"
+            "&nbsp;&nbsp;\"outer_method\": \"RK45\",<br>"
+            "&nbsp;&nbsp;\"inner_tol\": \"1e-6\",<br>"
+            "&nbsp;&nbsp;\"outer_tol\": \"1e-4\",<br>"
+            "&nbsp;&nbsp;\"max_iter\": 10<br>"
+            "}"
+            "</pre>"
+            "<b>Поля:</b><br>"
+            "• <b>n</b> — размерность системы<br>"
+            "• <b>equations</b> — список из n правых частей ẋ = f(t, x)<br>"
+            "• <b>boundary</b> — список из n краевых условий R = 0<br>"
+            "• <b>a, b</b> — границы отрезка интегрирования<br>"
+            "• <b>t_star</b> — точка старта (обычно равна a)<br>"
+            "• <b>p0</b> — начальное приближение для x(t*) длины n<br>"
+            "• <b>inner_method, outer_method</b> — RK45, RK23, DOP853, Radau, BDF, LSODA<br>"
+            "• <b>inner_tol, outer_tol</b> — точность строкой (например, \"1e-6\")<br>"
+            "• <b>max_iter</b> — максимум внешних итераций"
+        ),
 
         # Errors / messages
         "err_count_mismatch": "Число уравнений должно совпадать с числом краевых условий.",
@@ -214,6 +246,38 @@ STRINGS = {
             "• <b>Tab</b> — navigate between input fields<br>"
             "• <b>🌙/☀</b> — toggle theme (light/dark)<br>"
             "• <b>EN/RU</b> — switch interface language"
+        ),
+        "help_json_title": "Creating your own problem",
+        "help_json_body": (
+            "You can save the current problem to JSON via the «💾 Save» button "
+            "and open it later via «📂 Open».<br><br>"
+            "You can also create a JSON file manually in any text editor:<br><br>"
+            "<pre style='font-size:11px'>"
+            "{<br>"
+            "&nbsp;&nbsp;\"n\": 2,<br>"
+            "&nbsp;&nbsp;\"equations\": [\"x2\", \"0\"],<br>"
+            "&nbsp;&nbsp;\"boundary\": [\"xa0\", \"xb0 - 1\"],<br>"
+            "&nbsp;&nbsp;\"a\": 0.0,<br>"
+            "&nbsp;&nbsp;\"b\": 1.0,<br>"
+            "&nbsp;&nbsp;\"t_star\": 0.0,<br>"
+            "&nbsp;&nbsp;\"p0\": [0.0, 1.0],<br>"
+            "&nbsp;&nbsp;\"inner_method\": \"RK45\",<br>"
+            "&nbsp;&nbsp;\"outer_method\": \"RK45\",<br>"
+            "&nbsp;&nbsp;\"inner_tol\": \"1e-6\",<br>"
+            "&nbsp;&nbsp;\"outer_tol\": \"1e-4\",<br>"
+            "&nbsp;&nbsp;\"max_iter\": 10<br>"
+            "}"
+            "</pre>"
+            "<b>Fields:</b><br>"
+            "• <b>n</b> — system dimension<br>"
+            "• <b>equations</b> — list of n RHS strings ẋ = f(t, x)<br>"
+            "• <b>boundary</b> — list of n boundary conditions R = 0<br>"
+            "• <b>a, b</b> — integration interval bounds<br>"
+            "• <b>t_star</b> — starting point (usually equal to a)<br>"
+            "• <b>p0</b> — initial guess for x(t*) of length n<br>"
+            "• <b>inner_method, outer_method</b> — RK45, RK23, DOP853, Radau, BDF, LSODA<br>"
+            "• <b>inner_tol, outer_tol</b> — tolerance as string (e.g., \"1e-6\")<br>"
+            "• <b>max_iter</b> — outer iteration limit"
         ),
 
         # Errors / messages

@@ -996,7 +996,7 @@ class MainWindow(QMainWindow):
         self._help_cards = []
         section_keys = [
             "help_intro", "help_input", "help_params",
-            "help_plot", "help_example", "help_shortcuts"
+            "help_plot", "help_example", "help_json", "help_shortcuts"
         ]
         for key in section_keys:
             card = self._card()

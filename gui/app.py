@@ -1150,12 +1150,64 @@ class MainWindow(QMainWindow):
     #  Input collection                                                    #
     # ------------------------------------------------------------------ #
     def _collect_input(self):
-        a      = float(self.entry_a.text())
-        b      = float(self.entry_b.text())
-        t_star = float(self.entry_tstar.text()) if self.entry_tstar.text().strip() else a
-        eqs    = [e.text().strip() for _, e in self.eq_entries]
-        bcs    = [e.text().strip() for _, e in self.bc_entries]
-        p0     = [float(e.text().strip()) for _, e in self.p0_entries]
+        # Validate equations
+        eqs = []
+        for i, (_, e) in enumerate(self.eq_entries):
+            txt = e.text().strip()
+            if not txt:
+                raise ValueError(self._t("err_empty_equation", i=i + 1))
+            eqs.append(txt)
+
+        # Validate boundary conditions
+        bcs = []
+        for i, (_, e) in enumerate(self.bc_entries):
+            txt = e.text().strip()
+            if not txt:
+                raise ValueError(self._t("err_empty_bc", i=i + 1))
+            bcs.append(txt)
+
+        # Validate p0 (numeric)
+        p0 = []
+        for i, (_, e) in enumerate(self.p0_entries):
+            txt = e.text().strip()
+            if not txt:
+                raise ValueError(self._t("err_empty_p0", i=i + 1))
+            try:
+                p0.append(float(txt.replace(",", ".")))
+            except ValueError:
+                raise ValueError(self._t("err_invalid_p0", i=i + 1, val=txt))
+
+        # Validate interval and t_star
+        try:
+            a = float(self.entry_a.text().replace(",", "."))
+        except ValueError:
+            raise ValueError(self._t("err_invalid_a"))
+        try:
+            b = float(self.entry_b.text().replace(",", "."))
+        except ValueError:
+            raise ValueError(self._t("err_invalid_b"))
+        if a >= b:
+            raise ValueError(self._t("err_a_ge_b"))
+
+        ts_text = self.entry_tstar.text().strip()
+        if ts_text:
+            try:
+                t_star = float(ts_text.replace(",", "."))
+            except ValueError:
+                raise ValueError(self._t("err_invalid_tstar"))
+        else:
+            t_star = a
+        if t_star < a or t_star > b:
+            raise ValueError(self._t("err_tstar_out_of_range"))
+
+        # Validate max_iter
+        try:
+            max_iter = int(self.entry_max_iter.text())
+        except ValueError:
+            raise ValueError(self._t("err_invalid_max_iter"))
+        if max_iter < 1:
+            raise ValueError(self._t("err_invalid_max_iter"))
+
         n      = len(eqs)
         vars_  = [f"x{i+1}" for i in range(n)]
 
@@ -1176,7 +1228,7 @@ class MainWindow(QMainWindow):
             inner_atol   = inner_tol,
             outer_rtol   = outer_tol,
             outer_atol   = outer_tol,
-            max_iter     = int(self.entry_max_iter.text()),
+            max_iter     = max_iter,
         ), vars_
 
     # ------------------------------------------------------------------ #
@@ -1589,52 +1641,59 @@ class MainWindow(QMainWindow):
             self.canvas.draw()
 
     def _apply_combo_palettes(self):
-        """Fix combo dropdown colors and remove double-checkmark on macOS."""
+        """Apply theme-dependent stylesheet to combo dropdown views.
+
+        Views are created once per combo (cached on the combo as `_themed_view`)
+        to avoid leaking QListView instances on every theme toggle.
+        """
         c = self._colors
         all_combos = [self.combo_inner, self.combo_outer,
                       self.combo_inner_tol, self.combo_outer_tol,
                       self.combo_phase_x, self.combo_phase_y]
+        view_style = f"""
+            QListView {{
+                background-color: {c["card"]};
+                color: {c["text"]};
+                outline: none;
+                border: none;
+                border-radius: 8px;
+            }}
+            QListView::item {{
+                padding: 5px 10px;
+                border: none;
+                border-radius: 6px;
+                margin: 2px 4px;
+            }}
+            QListView::item:hover {{
+                background-color: {c["top_btn_hover"]};
+            }}
+            QListView::item:selected {{
+                background-color: {c["primary"]};
+                color: #ffffff;
+            }}
+        """
+        popup_style = f"""
+            QWidget {{
+                background-color: {c["card"]};
+                border: 1px solid {c["border"]};
+                border-radius: 8px;
+            }}
+        """
         for combo in all_combos:
-            # Replace view with plain QListView (no check indicators)
-            lv = QListView()
-            lv.setTextElideMode(Qt.TextElideMode.ElideRight)
-            lv.setStyleSheet(f"""
-                QListView {{
-                    background-color: {c["card"]};
-                    color: {c["text"]};
-                    outline: none;
-                    border: none;
-                    border-radius: 8px;
-                }}
-                QListView::item {{
-                    padding: 5px 10px;
-                    border: none;
-                    border-radius: 6px;
-                    margin: 2px 4px;
-                }}
-                QListView::item:hover {{
-                    background-color: {c["top_btn_hover"]};
-                }}
-                QListView::item:selected {{
-                    background-color: {c["primary"]};
-                    color: #ffffff;
-                }}
-            """)
-            combo.setView(lv)
-            # Force popup width to match the combo box
+            lv = getattr(combo, "_themed_view", None)
+            if lv is None:
+                lv = QListView()
+                lv.setTextElideMode(Qt.TextElideMode.ElideRight)
+                combo.setView(lv)
+                combo._themed_view = lv
+            lv.setStyleSheet(view_style)
             w = combo.width() if combo.width() > 0 else 280
             lv.setMinimumWidth(w)
-            popup = combo.view().parentWidget()
+            popup = lv.parentWidget()
             if popup:
                 popup.setMinimumWidth(w)
                 popup.setMaximumWidth(w)
-                popup.setStyleSheet(f"""
-                    QWidget {{
-                        background-color: {c["card"]};
-                        border: 1px solid {c["border"]};
-                        border-radius: 8px;
-                    }}
-                """)
+                popup.setStyleSheet(popup_style)
 
     # ------------------------------------------------------------------ #
     #  Language                                                            #

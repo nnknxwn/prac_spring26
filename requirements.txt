@@ -1,5 +1,5 @@
-numpy
-scipy
-sympy
-matplotlib
-PyQt6
+numpy==2.4.4
+scipy==1.17.1
+sympy==1.14.0
+matplotlib==3.10.8
+PyQt6==6.11.0

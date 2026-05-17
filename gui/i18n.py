@@ -190,6 +190,16 @@ STRINGS = {
         ),
 
         # Errors / messages
+        "err_empty_equation": "Поле уравнения x{i}' пустое.",
+        "err_empty_bc":       "Поле краевого условия R{i} пустое.",
+        "err_empty_p0":       "Поле p{i}₀ пустое.",
+        "err_invalid_p0":     "p{i}₀: '{val}' не является числом.",
+        "err_invalid_a":      "Поле a должно быть числом.",
+        "err_invalid_b":      "Поле b должно быть числом.",
+        "err_a_ge_b":         "Должно выполняться a < b.",
+        "err_invalid_tstar":  "Поле t* должно быть числом.",
+        "err_tstar_out_of_range": "t* должно лежать в [a, b].",
+        "err_invalid_max_iter": "Макс. итераций должно быть целым числом ≥ 1.",
         "status_solving":     "Вычисление...",
         "status_done":        "Готово.",
         "status_error":       "Ошибка: {msg}",
@@ -383,6 +393,16 @@ STRINGS = {
         ),
 
         # Errors / messages
+        "err_empty_equation": "Equation x{i}' field is empty.",
+        "err_empty_bc":       "Boundary condition R{i} field is empty.",
+        "err_empty_p0":       "p{i}₀ field is empty.",
+        "err_invalid_p0":     "p{i}₀: '{val}' is not a number.",
+        "err_invalid_a":      "Field a must be a number.",
+        "err_invalid_b":      "Field b must be a number.",
+        "err_a_ge_b":         "Must satisfy a < b.",
+        "err_invalid_tstar":  "Field t* must be a number.",
+        "err_tstar_out_of_range": "t* must lie within [a, b].",
+        "err_invalid_max_iter": "Max iterations must be an integer ≥ 1.",
         "status_solving":     "Computing...",
         "status_done":        "Done.",
         "status_error":       "Error: {msg}",

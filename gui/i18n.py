@@ -20,7 +20,15 @@ STRINGS = {
         "boundary":       "Краевые условия  R(x(a), x(b)) = 0",
         "btn_solve":      "Решить",
         "result_plot":    "График решения",
+        "result_phase":   "Фазовая плоскость",
         "result_table":   "Таблица значений",
+        "table_step":     "Шаг Δt:",
+        "table_step_placeholder": "авто",
+        "phase_x":        "X:",
+        "phase_y":        "Y:",
+        "tip_markers":    "Показать/скрыть узлы сетки",
+        "tip_phase":      "Фазовая плоскость",
+        "tip_colors":     "Цвета линий",
 
         # Library / Save / Load
         "btn_library":    "📚 Примеры",
@@ -71,13 +79,23 @@ STRINGS = {
         "help_params_title": "Вкладка «Параметры»",
         "help_params_body": (
             "<b>Внутренняя задача</b> — интегрирование системы ОДУ:<br>"
-            "• Метод: Рунге-Кутта, Радо, BDF, LSODA<br>"
+            "• Метод: RK45, Radau, LSODA<br>"
             "• Точность: используется как rtol и atol<br><br>"
             "<b>Внешняя задача</b> — метод продолжения по параметру:<br>"
             "• Метод: обычно Рунге-Кутта 4(5) достаточно<br>"
             "• Точность: критерий остановки ||Φ(p)|| &lt; tol<br>"
             "• Макс. итераций: предел внешних итераций<br><br>"
-            "При смене метода точность подставляется автоматически."
+            "При смене метода точность подставляется автоматически.<br><br>"
+            "<b>Доступные методы:</b><br>"
+            "• <b>Рунге-Кутта 4(5) (RK45)</b> — явный метод Рунге-Кутта порядка 4(5) "
+            "Дорманда-Принса. Универсальный, по умолчанию. Подходит для большинства "
+            "нежёстких задач.<br>"
+            "• <b>Радо IIA (Radau)</b> — неявный метод Рунге-Кутта 5-го порядка с "
+            "А-устойчивостью. Для жёстких систем, когда переменные меняются на "
+            "сильно разных временных масштабах.<br>"
+            "• <b>LSODA</b> — адаптивный метод Адамса-Моултона, автоматически "
+            "переключается между жёстким и нежёстким режимом. Использовать когда "
+            "не уверен в природе задачи."
         ),
         "help_methods_title": "Когда какой метод выбирать",
         "help_methods_body": (
@@ -150,7 +168,7 @@ STRINGS = {
             "• <b>a, b</b> — границы отрезка интегрирования<br>"
             "• <b>t_star</b> — точка старта (обычно равна a)<br>"
             "• <b>p0</b> — начальное приближение для x(t*) длины n<br>"
-            "• <b>inner_method, outer_method</b> — RK45, RK23, DOP853, Radau, BDF, LSODA<br>"
+            "• <b>inner_method, outer_method</b> — RK45, Radau, LSODA<br>"
             "• <b>inner_tol, outer_tol</b> — точность строкой (например, \"1e-6\")<br>"
             "• <b>max_iter</b> — максимум внешних итераций"
         ),
@@ -181,7 +199,15 @@ STRINGS = {
         "boundary":       "Boundary conditions  R(x(a), x(b)) = 0",
         "btn_solve":      "Solve",
         "result_plot":    "Solution plot",
+        "result_phase":   "Phase plane",
         "result_table":   "Value table",
+        "table_step":     "Step Δt:",
+        "table_step_placeholder": "auto",
+        "phase_x":        "X:",
+        "phase_y":        "Y:",
+        "tip_markers":    "Show/hide grid points",
+        "tip_phase":      "Phase plane",
+        "tip_colors":     "Line colors",
 
         # Library / Save / Load
         "btn_library":    "📚 Examples",
@@ -232,13 +258,22 @@ STRINGS = {
         "help_params_title": "Parameters Tab",
         "help_params_body": (
             "<b>Inner problem</b> — ODE system integration:<br>"
-            "• Method: Runge-Kutta, Radau, BDF, LSODA<br>"
+            "• Method: RK45, Radau, LSODA<br>"
             "• Tolerance: used as both rtol and atol<br><br>"
             "<b>Outer problem</b> — parameter continuation:<br>"
             "• Method: Runge-Kutta 4(5) usually sufficient<br>"
             "• Tolerance: stopping criterion ||Φ(p)|| &lt; tol<br>"
             "• Max iterations: outer iteration limit<br><br>"
-            "Tolerance auto-updates when method is changed."
+            "Tolerance auto-updates when method is changed.<br><br>"
+            "<b>Available methods:</b><br>"
+            "• <b>Runge-Kutta 4(5) (RK45)</b> — explicit Runge-Kutta of order 4(5) "
+            "by Dormand-Prince. Universal, default. Fits most non-stiff problems.<br>"
+            "• <b>Radau IIA (Radau)</b> — implicit Runge-Kutta of 5th order with "
+            "A-stability. For stiff systems where variables change on very different "
+            "time scales.<br>"
+            "• <b>LSODA</b> — adaptive Adams-Moulton method, automatically switches "
+            "between stiff and non-stiff modes. Use when unsure about the problem's "
+            "nature."
         ),
         "help_methods_title": "When to use each method",
         "help_methods_body": (
@@ -311,7 +346,7 @@ STRINGS = {
             "• <b>a, b</b> — integration interval bounds<br>"
             "• <b>t_star</b> — starting point (usually equal to a)<br>"
             "• <b>p0</b> — initial guess for x(t*) of length n<br>"
-            "• <b>inner_method, outer_method</b> — RK45, RK23, DOP853, Radau, BDF, LSODA<br>"
+            "• <b>inner_method, outer_method</b> — RK45, Radau, LSODA<br>"
             "• <b>inner_tol, outer_tol</b> — tolerance as string (e.g., \"1e-6\")<br>"
             "• <b>max_iter</b> — outer iteration limit"
         ),

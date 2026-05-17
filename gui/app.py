@@ -21,23 +21,17 @@ from gui.i18n import get, LANGUAGES
 from solver import solve_bvp
 
 
-METHOD_KEYS = ["RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA"]
+METHOD_KEYS = ["RK45", "Radau", "LSODA"]
 
 METHOD_DISPLAY = {
     "ru": {
         "RK45":   "Рунге-Кутта 4(5)",
-        "RK23":   "Рунге-Кутта 2(3)",
-        "DOP853": "Дорманд-Принс 8(5,3)",
         "Radau":  "Радо IIA (неявный)",
-        "BDF":    "BDF (формулы дифференцирования назад)",
         "LSODA":  "LSODA (автовыбор)",
     },
     "en": {
         "RK45":   "Runge-Kutta 4(5)",
-        "RK23":   "Runge-Kutta 2(3)",
-        "DOP853": "Dormand-Prince 8(5,3)",
         "Radau":  "Radau IIA (implicit)",
-        "BDF":    "BDF (backward differentiation)",
         "LSODA":  "LSODA (auto-select)",
     },
 }
@@ -45,18 +39,12 @@ METHOD_DISPLAY = {
 METHOD_TOOLTIPS = {
     "ru": {
         "RK45":   "Явный, нежёсткие задачи. Универсальный выбор.",
-        "RK23":   "Явный, низкий порядок. Быстрый, но менее точный.",
-        "DOP853": "Явный, высокий порядок. Для высокой точности.",
         "Radau":  "Неявный. Для жёстких систем.",
-        "BDF":    "Неявный. Для жёстких систем с медленной динамикой.",
         "LSODA":  "Автоматически выбирает между жёстким и нежёстким.",
     },
     "en": {
         "RK45":   "Explicit, non-stiff problems. Universal choice.",
-        "RK23":   "Explicit, low order. Fast but less accurate.",
-        "DOP853": "Explicit, high order. For high accuracy.",
         "Radau":  "Implicit. For stiff systems.",
-        "BDF":    "Implicit. For stiff systems with slow dynamics.",
         "LSODA":  "Auto-selects between stiff and non-stiff.",
     },
 }
@@ -66,10 +54,7 @@ TOLERANCE_OPTIONS = ["1e-2", "1e-3", "1e-4", "1e-6", "1e-8", "1e-9", "1e-10", "1
 
 METHOD_DEFAULTS = {
     "RK45":   "1e-6",
-    "RK23":   "1e-4",
-    "DOP853": "1e-8",
     "Radau":  "1e-6",
-    "BDF":    "1e-6",
     "LSODA":  "1e-6",
 }
 
@@ -343,7 +328,7 @@ QTextEdit#help {{
 
 
 class MainWindow(QMainWindow):
-    solve_done = pyqtSignal(object, object, list)
+    solve_done = pyqtSignal(object, object, list, object)
     solve_error = pyqtSignal(str)
 
     def __init__(self):
@@ -352,11 +337,15 @@ class MainWindow(QMainWindow):
         self.theme = "light"
         self._colors = LIGHT_COLORS
         self._last_result = None
+        self._last_dense = None
         self._custom_colors = list(COLORS)  # mutable copy of plot colors
         self._status_key = None
         self._status_kwargs = {}
         self._status_object_name = "status"
         self._show_markers = False
+        self._phase_mode = False
+        self._phase_x_idx = 0
+        self._phase_y_idx = 1
         self.eq_entries = []
         self.bc_entries = []
         self.p0_entries = []
@@ -665,6 +654,34 @@ class MainWindow(QMainWindow):
         self.btn_markers.clicked.connect(self._toggle_markers)
         plot_header.addWidget(self.btn_markers)
 
+        self.btn_phase = QPushButton("📐")
+        self.btn_phase.setObjectName("topBtn")
+        self.btn_phase.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_phase.setCheckable(True)
+        self.btn_phase.setChecked(False)
+        self.btn_phase.clicked.connect(self._toggle_phase)
+        plot_header.addWidget(self.btn_phase)
+
+        self.lbl_phase_x = QLabel("X:")
+        self.lbl_phase_x.setObjectName("muted")
+        self.lbl_phase_x.setVisible(False)
+        plot_header.addWidget(self.lbl_phase_x)
+        self.combo_phase_x = QComboBox()
+        self.combo_phase_x.setFixedWidth(70)
+        self.combo_phase_x.setVisible(False)
+        self.combo_phase_x.currentIndexChanged.connect(self._on_phase_axis_changed)
+        plot_header.addWidget(self.combo_phase_x)
+
+        self.lbl_phase_y = QLabel("Y:")
+        self.lbl_phase_y.setObjectName("muted")
+        self.lbl_phase_y.setVisible(False)
+        plot_header.addWidget(self.lbl_phase_y)
+        self.combo_phase_y = QComboBox()
+        self.combo_phase_y.setFixedWidth(70)
+        self.combo_phase_y.setVisible(False)
+        self.combo_phase_y.currentIndexChanged.connect(self._on_phase_axis_changed)
+        plot_header.addWidget(self.combo_phase_y)
+
         self.btn_colors = QPushButton("🎨")
         self.btn_colors.setObjectName("topBtn")
         self.btn_colors.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -688,9 +705,19 @@ class MainWindow(QMainWindow):
         tv.setContentsMargins(16, 14, 16, 14)
         tv.setSpacing(8)
 
+        tbl_header = QHBoxLayout()
         self.lbl_table = QLabel()
         self.lbl_table.setObjectName("section")
-        tv.addWidget(self.lbl_table)
+        tbl_header.addWidget(self.lbl_table)
+        tbl_header.addStretch()
+        self.lbl_table_step = QLabel()
+        self.lbl_table_step.setObjectName("muted")
+        tbl_header.addWidget(self.lbl_table_step)
+        self.entry_table_step = QLineEdit()
+        self.entry_table_step.setFixedWidth(90)
+        self.entry_table_step.editingFinished.connect(self._on_table_step_changed)
+        tbl_header.addWidget(self.entry_table_step)
+        tv.addLayout(tbl_header)
 
         self.table = QTableWidget(0, 1)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -1067,15 +1094,17 @@ class MainWindow(QMainWindow):
 
         def worker():
             try:
-                _, t, x = solve_bvp(**params)
-                self.solve_done.emit(t, x, var_names)
+                _, t, x, sol_dense = solve_bvp(**params)
+                self.solve_done.emit(t, x, var_names, sol_dense)
             except Exception as e:
                 self.solve_error.emit(str(e))
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _update_results(self, t, x, var_names):
+    def _update_results(self, t, x, var_names, sol_dense):
         self._last_result = (t, x, var_names)
+        self._last_dense = sol_dense
+        self._update_phase_combos(var_names)
         self._draw_plot(t, x, var_names)
         self._fill_table(t, x, var_names)
         self._set_status(self._t("status_done"), "statusOk", key="status_done")
@@ -1086,19 +1115,32 @@ class MainWindow(QMainWindow):
         self.ax.clear()
         self._style_axes()
 
-        for i, name in enumerate(var_names):
-            color = self._custom_colors[i % len(self._custom_colors)]
+        if self._phase_mode and len(var_names) >= 2:
+            ix = min(self._phase_x_idx, len(var_names) - 1)
+            iy = min(self._phase_y_idx, len(var_names) - 1)
+            color = self._custom_colors[0]
             marker = 'o' if self._show_markers else None
             ms = 4 if self._show_markers else None
-            self.ax.plot(t, x[i], color=color, linewidth=2, label=name,
-                         marker=marker, markersize=ms, markerfacecolor=color,
-                         markeredgecolor=color)
+            self.ax.plot(x[ix], x[iy], color=color, linewidth=2,
+                         marker=marker, markersize=ms,
+                         markerfacecolor=color, markeredgecolor=color)
+            self.ax.set_xlabel(var_names[ix], fontsize=11, color=c["field_label"])
+            self.ax.set_ylabel(var_names[iy], fontsize=11, color=c["field_label"])
+        else:
+            for i, name in enumerate(var_names):
+                color = self._custom_colors[i % len(self._custom_colors)]
+                marker = 'o' if self._show_markers else None
+                ms = 4 if self._show_markers else None
+                self.ax.plot(t, x[i], color=color, linewidth=2, label=name,
+                             marker=marker, markersize=ms, markerfacecolor=color,
+                             markeredgecolor=color)
 
-        legend = self.ax.legend(fontsize=10, frameon=False)
-        if legend:
-            for txt in legend.get_texts():
-                txt.set_color(c["text"])
-        self.ax.set_xlabel("t", fontsize=11, color=c["field_label"])
+            legend = self.ax.legend(fontsize=10, frameon=False)
+            if legend:
+                for txt in legend.get_texts():
+                    txt.set_color(c["text"])
+            self.ax.set_xlabel("t", fontsize=11, color=c["field_label"])
+            self.ax.set_ylabel("x(t)", fontsize=11, color=c["field_label"])
         self.fig.tight_layout(pad=1.5)
         self.canvas.draw()
 
@@ -1107,6 +1149,59 @@ class MainWindow(QMainWindow):
         self._show_markers = self.btn_markers.isChecked()
         if self._last_result:
             self._draw_plot(*self._last_result)
+
+    def _toggle_phase(self):
+        """Toggle phase plane mode."""
+        self._phase_mode = self.btn_phase.isChecked()
+        visible = self._phase_mode
+        for w in (self.lbl_phase_x, self.combo_phase_x,
+                  self.lbl_phase_y, self.combo_phase_y):
+            w.setVisible(visible)
+        self.lbl_plot.setText(
+            self._t("result_phase") if self._phase_mode else self._t("result_plot"))
+        if self._last_result:
+            self._draw_plot(*self._last_result)
+
+    def _on_phase_axis_changed(self):
+        """Handle phase X/Y combo selection."""
+        if self.combo_phase_x.count() > 0:
+            self._phase_x_idx = self.combo_phase_x.currentIndex()
+        if self.combo_phase_y.count() > 0:
+            self._phase_y_idx = self.combo_phase_y.currentIndex()
+        if self._phase_mode and self._last_result:
+            self._draw_plot(*self._last_result)
+
+    def _update_phase_combos(self, var_names):
+        """Refill phase axis combo boxes for current variable names."""
+        n = len(var_names)
+        # Disable phase mode for n < 2
+        if n < 2:
+            self.btn_phase.setEnabled(False)
+            if self._phase_mode:
+                self.btn_phase.setChecked(False)
+                self._toggle_phase()
+        else:
+            self.btn_phase.setEnabled(True)
+
+        for combo, target_idx in (
+            (self.combo_phase_x, self._phase_x_idx),
+            (self.combo_phase_y, self._phase_y_idx),
+        ):
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems(var_names)
+            combo.setCurrentIndex(min(target_idx, max(0, n - 1)))
+            combo.blockSignals(False)
+        # Defaults: x1, x2
+        if n >= 2:
+            self._phase_x_idx = self.combo_phase_x.currentIndex()
+            self._phase_y_idx = self.combo_phase_y.currentIndex()
+
+    def _on_table_step_changed(self):
+        """Re-fill table when step value changes."""
+        if self._last_result:
+            t, x, var_names = self._last_result
+            self._fill_table(t, x, var_names)
 
     # ------------------------------------------------------------------ #
     #  Library / Save / Load                                              #
@@ -1259,18 +1354,44 @@ class MainWindow(QMainWindow):
         return QIcon(pix)
 
     def _fill_table(self, t, x, var_names):
+        import numpy as np
         cols = ["t"] + var_names
+
+        step_text = self.entry_table_step.text().strip()
+        t_grid = None
+        x_grid = None
+        if step_text:
+            try:
+                step = float(step_text.replace(",", "."))
+            except ValueError:
+                step = None
+            if step is not None and step > 0 and self._last_dense is not None:
+                a, b = float(t[0]), float(t[-1])
+                t_grid = np.arange(a, b + step * 0.5, step)
+                # Clip last point to b to avoid overshoot beyond integration range
+                if t_grid[-1] > b:
+                    t_grid = t_grid[t_grid <= b + 1e-12]
+                    if t_grid.size == 0 or t_grid[-1] < b:
+                        t_grid = np.append(t_grid, b)
+                x_grid = self._last_dense(t_grid)
+
         self.table.setColumnCount(len(cols))
         self.table.setHorizontalHeaderLabels(cols)
 
-        step = max(1, len(t) // 50)
-        rows = list(range(0, len(t), step))
-        self.table.setRowCount(len(rows))
-
-        for r, j in enumerate(rows):
-            self.table.setItem(r, 0, QTableWidgetItem(f"{t[j]:.4f}"))
-            for i in range(len(var_names)):
-                self.table.setItem(r, i + 1, QTableWidgetItem(f"{x[i][j]:.6f}"))
+        if t_grid is not None and x_grid is not None:
+            self.table.setRowCount(len(t_grid))
+            for r in range(len(t_grid)):
+                self.table.setItem(r, 0, QTableWidgetItem(f"{t_grid[r]:.4f}"))
+                for i in range(len(var_names)):
+                    self.table.setItem(r, i + 1, QTableWidgetItem(f"{x_grid[i][r]:.6f}"))
+        else:
+            step_idx = max(1, len(t) // 50)
+            rows = list(range(0, len(t), step_idx))
+            self.table.setRowCount(len(rows))
+            for r, j in enumerate(rows):
+                self.table.setItem(r, 0, QTableWidgetItem(f"{t[j]:.4f}"))
+                for i in range(len(var_names)):
+                    self.table.setItem(r, i + 1, QTableWidgetItem(f"{x[i][j]:.6f}"))
 
     def _on_error(self, msg):
         self._set_status(self._t("status_error", msg=msg), "statusErr", key="status_error", msg=msg)
@@ -1378,8 +1499,16 @@ class MainWindow(QMainWindow):
         self.btn_library.setText(self._t("btn_library"))
         self.btn_save.setText(self._t("btn_save"))
         self.btn_load.setText(self._t("btn_load"))
-        self.lbl_plot.setText(self._t("result_plot"))
+        self.lbl_plot.setText(
+            self._t("result_phase") if self._phase_mode else self._t("result_plot"))
         self.lbl_table.setText(self._t("result_table"))
+        self.lbl_table_step.setText(self._t("table_step"))
+        self.entry_table_step.setPlaceholderText(self._t("table_step_placeholder"))
+        self.btn_markers.setToolTip(self._t("tip_markers"))
+        self.btn_phase.setToolTip(self._t("tip_phase"))
+        self.btn_colors.setToolTip(self._t("tip_colors"))
+        self.lbl_phase_x.setText(self._t("phase_x"))
+        self.lbl_phase_y.setText(self._t("phase_y"))
 
         # Parameters tab
         self.lbl_inner_title.setText(self._t("inner_card_title"))

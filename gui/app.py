@@ -295,6 +295,10 @@ QTableWidget::item {{
     background: {c["card"]};
     color: {c["text"]};
 }}
+QHeaderView {{
+    background: {c["table_header"]};
+    border: none;
+}}
 QHeaderView::section {{
     background: {c["table_header"]};
     color: {c["header_text"]};

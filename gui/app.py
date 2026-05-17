@@ -282,9 +282,18 @@ QTableWidget {{
     gridline-color: {c["grid_line"]};
     font-size: 12px;
     color: {c["text"]};
+    alternate-background-color: {c["card"]};
+}}
+QTableWidget QTableCornerButton::section {{
+    background: {c["table_header"]};
+    border: none;
+    border-right: 1px solid {c["border"]};
+    border-bottom: 1px solid {c["border"]};
 }}
 QTableWidget::item {{
     padding: 6px;
+    background: {c["card"]};
+    color: {c["text"]};
 }}
 QHeaderView::section {{
     background: {c["table_header"]};
@@ -323,6 +332,34 @@ QTextEdit#help {{
     color: {c["text"]};
     font-size: 13px;
     selection-background-color: {c["selection"]};
+}}
+
+QMenu {{
+    background-color: {c["card"]};
+    color: {c["text"]};
+    border: 1px solid {c["border"]};
+    border-radius: 8px;
+    padding: 4px;
+}}
+QMenu::item {{
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 6px;
+    margin: 2px 4px;
+}}
+QMenu::item:selected {{
+    background-color: {c["primary"]};
+    color: #ffffff;
+}}
+QMenu::separator {{
+    height: 1px;
+    background: {c["border"]};
+    margin: 4px 8px;
+}}
+QMenu::right-arrow {{
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
 }}
 """
 

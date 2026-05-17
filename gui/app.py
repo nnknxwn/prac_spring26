@@ -645,15 +645,6 @@ class MainWindow(QMainWindow):
         plot_header.addWidget(self.lbl_plot)
         plot_header.addStretch()
 
-        self.btn_markers = QPushButton("•")
-        self.btn_markers.setObjectName("topBtn")
-        self.btn_markers.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_markers.setToolTip("Show/hide grid points")
-        self.btn_markers.setCheckable(True)
-        self.btn_markers.setChecked(False)
-        self.btn_markers.clicked.connect(self._toggle_markers)
-        plot_header.addWidget(self.btn_markers)
-
         self.btn_phase = QPushButton("📐")
         self.btn_phase.setObjectName("topBtn")
         self.btn_phase.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -681,6 +672,15 @@ class MainWindow(QMainWindow):
         self.combo_phase_y.setVisible(False)
         self.combo_phase_y.currentIndexChanged.connect(self._on_phase_axis_changed)
         plot_header.addWidget(self.combo_phase_y)
+
+        self.btn_markers = QPushButton("•")
+        self.btn_markers.setObjectName("topBtn")
+        self.btn_markers.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_markers.setToolTip("Show/hide grid points")
+        self.btn_markers.setCheckable(True)
+        self.btn_markers.setChecked(False)
+        self.btn_markers.clicked.connect(self._toggle_markers)
+        plot_header.addWidget(self.btn_markers)
 
         self.btn_colors = QPushButton("🎨")
         self.btn_colors.setObjectName("topBtn")
@@ -721,7 +721,8 @@ class MainWindow(QMainWindow):
 
         self.table = QTableWidget(0, 1)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setVisible(True)
+        self.table.verticalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
         self.table.setAlternatingRowColors(False)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
@@ -1360,19 +1361,20 @@ class MainWindow(QMainWindow):
         step_text = self.entry_table_step.text().strip()
         t_grid = None
         x_grid = None
-        if step_text:
+        if step_text and self._last_dense is not None:
             try:
                 step = float(step_text.replace(",", "."))
             except ValueError:
                 step = None
-            if step is not None and step > 0 and self._last_dense is not None:
-                a, b = float(t[0]), float(t[-1])
-                t_grid = np.arange(a, b + step * 0.5, step)
-                # Clip last point to b to avoid overshoot beyond integration range
-                if t_grid[-1] > b:
-                    t_grid = t_grid[t_grid <= b + 1e-12]
-                    if t_grid.size == 0 or t_grid[-1] < b:
-                        t_grid = np.append(t_grid, b)
+            a, b = float(t[0]), float(t[-1])
+            span = b - a
+            if step is not None and step > 0 and step <= span:
+                # Build evenly spaced grid; include endpoint b explicitly
+                n_steps = int(np.floor(span / step + 1e-9))
+                t_grid = a + np.arange(n_steps + 1) * step
+                if t_grid[-1] < b - 1e-12:
+                    t_grid = np.append(t_grid, b)
+                t_grid[-1] = min(t_grid[-1], b)
                 x_grid = self._last_dense(t_grid)
 
         self.table.setColumnCount(len(cols))
@@ -1392,6 +1394,10 @@ class MainWindow(QMainWindow):
                 self.table.setItem(r, 0, QTableWidgetItem(f"{t[j]:.4f}"))
                 for i in range(len(var_names)):
                     self.table.setItem(r, i + 1, QTableWidgetItem(f"{x[i][j]:.6f}"))
+
+        # Row numbering (1-based)
+        self.table.setVerticalHeaderLabels(
+            [str(r + 1) for r in range(self.table.rowCount())])
 
     def _on_error(self, msg):
         self._set_status(self._t("status_error", msg=msg), "statusErr", key="status_error", msg=msg)
@@ -1428,7 +1434,8 @@ class MainWindow(QMainWindow):
         """Fix combo dropdown colors and remove double-checkmark on macOS."""
         c = self._colors
         all_combos = [self.combo_inner, self.combo_outer,
-                      self.combo_inner_tol, self.combo_outer_tol]
+                      self.combo_inner_tol, self.combo_outer_tol,
+                      self.combo_phase_x, self.combo_phase_y]
         for combo in all_combos:
             # Replace view with plain QListView (no check indicators)
             lv = QListView()
@@ -1504,6 +1511,7 @@ class MainWindow(QMainWindow):
         self.lbl_table.setText(self._t("result_table"))
         self.lbl_table_step.setText(self._t("table_step"))
         self.entry_table_step.setPlaceholderText(self._t("table_step_placeholder"))
+        self.entry_table_step.setToolTip(self._t("tip_table_step"))
         self.btn_markers.setToolTip(self._t("tip_markers"))
         self.btn_phase.setToolTip(self._t("tip_phase"))
         self.btn_colors.setToolTip(self._t("tip_colors"))

@@ -29,6 +29,7 @@ STRINGS = {
         "tip_markers":    "Показать/скрыть узлы сетки",
         "tip_phase":      "Фазовая плоскость",
         "tip_colors":     "Цвета линий",
+        "tip_table_step": "Шаг по t для таблицы (например, 0.1). Должен быть ≤ b−a. Пусто = автопрорежение.",
 
         # Library / Save / Load
         "btn_library":    "📚 Примеры",
@@ -117,9 +118,13 @@ STRINGS = {
         ),
         "help_plot_title": "График и таблица",
         "help_plot_body": (
+            "• Кнопка <b>«📐»</b> — фазовая плоскость (для систем n ≥ 2): "
+            "выбираешь, какие переменные на осях X и Y<br>"
             "• Кнопка <b>«•»</b> — показать/скрыть узлы сетки интегратора<br>"
             "• Кнопка <b>«🎨»</b> — сменить цвет линии для каждой переменной<br>"
-            "• Таблица показывает значения в узлах сетки (до ~50 строк)"
+            "• Поле <b>«Шаг Δt»</b> — шаг по t для таблицы значений. "
+            "Например, при [a, b] = [0, 1] и шаге 0.1 будет 11 строк. "
+            "Пусто = автопрорежение узлов сетки до ~50 строк."
         ),
         "help_example_title": "Пример",
         "help_example_body": (
@@ -208,6 +213,7 @@ STRINGS = {
         "tip_markers":    "Show/hide grid points",
         "tip_phase":      "Phase plane",
         "tip_colors":     "Line colors",
+        "tip_table_step": "Step in t for the table (e.g. 0.1). Must be ≤ b−a. Empty = auto-thinning.",
 
         # Library / Save / Load
         "btn_library":    "📚 Examples",
@@ -295,9 +301,13 @@ STRINGS = {
         ),
         "help_plot_title": "Plot and Table",
         "help_plot_body": (
+            "• Button <b>«📐»</b> — phase plane (for n ≥ 2): "
+            "choose which variables go on X and Y axes<br>"
             "• Button <b>«•»</b> — show/hide integrator grid points<br>"
             "• Button <b>«🎨»</b> — change line color per variable<br>"
-            "• Table shows values at grid nodes (up to ~50 rows)"
+            "• Field <b>«Step Δt»</b> — step in t for the value table. "
+            "E.g. with [a, b] = [0, 1] and step 0.1 you get 11 rows. "
+            "Empty = auto-thinning of grid nodes to ~50 rows."
         ),
         "help_example_title": "Example",
         "help_example_body": (

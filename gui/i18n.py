@@ -29,7 +29,9 @@ STRINGS = {
         "tip_markers":    "Показать/скрыть узлы сетки",
         "tip_phase":      "Фазовая плоскость",
         "tip_colors":     "Цвета линий",
+        "tip_axes":       "Границы осей",
         "tip_table_step": "Шаг по t для таблицы (например, 0.1). Должен быть ≤ b−a. Пусто = автопрорежение.",
+        "btn_axes_reset": "Сбросить",
 
         # Library / Save / Load
         "btn_library":    "📚 Примеры",
@@ -122,6 +124,7 @@ STRINGS = {
             "выбираешь, какие переменные на осях X и Y<br>"
             "• Кнопка <b>«•»</b> — показать/скрыть узлы сетки интегратора<br>"
             "• Кнопка <b>«🎨»</b> — сменить цвет линии для каждой переменной<br>"
+            "• Кнопка <b>«📏»</b> — задать границы осей вручную (пусто = авто)<br>"
             "• Поле <b>«Шаг Δt»</b> — шаг по t для таблицы значений. "
             "Например, при [a, b] = [0, 1] и шаге 0.1 будет 11 строк. "
             "Пусто = автопрорежение узлов сетки до ~50 строк."
@@ -213,7 +216,9 @@ STRINGS = {
         "tip_markers":    "Show/hide grid points",
         "tip_phase":      "Phase plane",
         "tip_colors":     "Line colors",
+        "tip_axes":       "Axes range",
         "tip_table_step": "Step in t for the table (e.g. 0.1). Must be ≤ b−a. Empty = auto-thinning.",
+        "btn_axes_reset": "Reset",
 
         # Library / Save / Load
         "btn_library":    "📚 Examples",
@@ -305,6 +310,7 @@ STRINGS = {
             "choose which variables go on X and Y axes<br>"
             "• Button <b>«•»</b> — show/hide integrator grid points<br>"
             "• Button <b>«🎨»</b> — change line color per variable<br>"
+            "• Button <b>«📏»</b> — set axes ranges manually (empty = auto)<br>"
             "• Field <b>«Step Δt»</b> — step in t for the value table. "
             "E.g. with [a, b] = [0, 1] and step 0.1 you get 11 rows. "
             "Empty = auto-thinning of grid nodes to ~50 rows."

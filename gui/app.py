@@ -735,7 +735,63 @@ class MainWindow(QMainWindow):
         self.btn_colors.setToolTip("Colors")
         self.btn_colors.clicked.connect(self._show_color_menu)
         plot_header.addWidget(self.btn_colors)
+
+        self.btn_axes = QPushButton("📏")
+        self.btn_axes.setObjectName("topBtn")
+        self.btn_axes.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_axes.setCheckable(True)
+        self.btn_axes.setChecked(False)
+        self.btn_axes.clicked.connect(self._toggle_axes_row)
+        plot_header.addWidget(self.btn_axes)
         pv.addLayout(plot_header)
+
+        # Axes range row (hidden by default)
+        self.axes_row_widget = QWidget()
+        axes_row = QHBoxLayout(self.axes_row_widget)
+        axes_row.setContentsMargins(0, 0, 0, 0)
+        axes_row.setSpacing(8)
+
+        self.lbl_axes_x = QLabel("X:")
+        self.lbl_axes_x.setObjectName("muted")
+        axes_row.addWidget(self.lbl_axes_x)
+        self.entry_xmin = QLineEdit()
+        self.entry_xmin.setFixedWidth(80)
+        self.entry_xmin.editingFinished.connect(self._on_axes_changed)
+        axes_row.addWidget(self.entry_xmin)
+        self.lbl_axes_dash_x = QLabel("—")
+        self.lbl_axes_dash_x.setObjectName("muted")
+        axes_row.addWidget(self.lbl_axes_dash_x)
+        self.entry_xmax = QLineEdit()
+        self.entry_xmax.setFixedWidth(80)
+        self.entry_xmax.editingFinished.connect(self._on_axes_changed)
+        axes_row.addWidget(self.entry_xmax)
+
+        axes_row.addSpacing(16)
+
+        self.lbl_axes_y = QLabel("Y:")
+        self.lbl_axes_y.setObjectName("muted")
+        axes_row.addWidget(self.lbl_axes_y)
+        self.entry_ymin = QLineEdit()
+        self.entry_ymin.setFixedWidth(80)
+        self.entry_ymin.editingFinished.connect(self._on_axes_changed)
+        axes_row.addWidget(self.entry_ymin)
+        self.lbl_axes_dash_y = QLabel("—")
+        self.lbl_axes_dash_y.setObjectName("muted")
+        axes_row.addWidget(self.lbl_axes_dash_y)
+        self.entry_ymax = QLineEdit()
+        self.entry_ymax.setFixedWidth(80)
+        self.entry_ymax.editingFinished.connect(self._on_axes_changed)
+        axes_row.addWidget(self.entry_ymax)
+
+        self.btn_axes_reset = QPushButton()
+        self.btn_axes_reset.setObjectName("topBtn")
+        self.btn_axes_reset.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_axes_reset.clicked.connect(self._on_axes_reset)
+        axes_row.addWidget(self.btn_axes_reset)
+
+        axes_row.addStretch()
+        self.axes_row_widget.setVisible(False)
+        pv.addWidget(self.axes_row_widget)
 
         self.fig = Figure(figsize=(6, 4), dpi=100)
         self.ax = self.fig.add_subplot(111)
@@ -1189,8 +1245,53 @@ class MainWindow(QMainWindow):
                     txt.set_color(c["text"])
             self.ax.set_xlabel("t", fontsize=11, color=c["field_label"])
             self.ax.set_ylabel("x(t)", fontsize=11, color=c["field_label"])
+        self._apply_axes_limits()
         self.fig.tight_layout(pad=1.5)
         self.canvas.draw()
+
+    def _apply_axes_limits(self):
+        """Apply user-specified axes limits if any are set; otherwise leave autoscale."""
+        def _parse(le):
+            txt = le.text().strip().replace(",", ".")
+            if not txt:
+                return None
+            try:
+                return float(txt)
+            except ValueError:
+                return None
+
+        xmin = _parse(self.entry_xmin)
+        xmax = _parse(self.entry_xmax)
+        ymin = _parse(self.entry_ymin)
+        ymax = _parse(self.entry_ymax)
+
+        cur_xmin, cur_xmax = self.ax.get_xlim()
+        cur_ymin, cur_ymax = self.ax.get_ylim()
+        new_xmin = xmin if xmin is not None else cur_xmin
+        new_xmax = xmax if xmax is not None else cur_xmax
+        new_ymin = ymin if ymin is not None else cur_ymin
+        new_ymax = ymax if ymax is not None else cur_ymax
+        if new_xmin < new_xmax:
+            self.ax.set_xlim(new_xmin, new_xmax)
+        if new_ymin < new_ymax:
+            self.ax.set_ylim(new_ymin, new_ymax)
+
+    def _toggle_axes_row(self):
+        """Show/hide the axes range row."""
+        self.axes_row_widget.setVisible(self.btn_axes.isChecked())
+
+    def _on_axes_changed(self):
+        """Re-render plot when any of the axes limit fields changes."""
+        if self._last_result:
+            self._draw_plot(*self._last_result)
+
+    def _on_axes_reset(self):
+        """Clear all axes limit fields and re-render with autoscale."""
+        for le in (self.entry_xmin, self.entry_xmax,
+                   self.entry_ymin, self.entry_ymax):
+            le.clear()
+        if self._last_result:
+            self._draw_plot(*self._last_result)
 
     def _toggle_markers(self):
         """Toggle grid point markers on the plot."""
@@ -1571,6 +1672,13 @@ class MainWindow(QMainWindow):
         self.btn_markers.setToolTip(self._t("tip_markers"))
         self.btn_phase.setToolTip(self._t("tip_phase"))
         self.btn_colors.setToolTip(self._t("tip_colors"))
+        self.btn_axes.setToolTip(self._t("tip_axes"))
+        self.btn_axes_reset.setText(self._t("btn_axes_reset"))
+        for le, ph in (
+            (self.entry_xmin, "x min"), (self.entry_xmax, "x max"),
+            (self.entry_ymin, "y min"), (self.entry_ymax, "y max"),
+        ):
+            le.setPlaceholderText(ph)
         self.lbl_phase_x.setText(self._t("phase_x"))
         self.lbl_phase_y.setText(self._t("phase_y"))
 

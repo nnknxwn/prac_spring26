@@ -425,6 +425,7 @@ class MainWindow(QMainWindow):
 
         title = QLabel("BVP Solver")
         title.setObjectName("title")
+        self.lbl_app_title = title
         h.addWidget(title)
 
         h.addStretch()
@@ -1213,6 +1214,8 @@ class MainWindow(QMainWindow):
         self._refresh_labels()
 
     def _refresh_labels(self):
+        self.setWindowTitle(self._t("app_title"))
+        self.lbl_app_title.setText(self._t("app_title"))
         self.tabs.setTabText(0, self._t("tab_solution"))
         self.tabs.setTabText(1, self._t("tab_parameters"))
         self.tabs.setTabText(2, self._t("tab_author"))

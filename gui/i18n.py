@@ -2,6 +2,9 @@
 
 STRINGS = {
     "ru": {
+        # App title
+        "app_title":      "Решатель краевых задач",
+
         # Tabs
         "tab_solution":   "Решение",
         "tab_parameters": "Параметры",
@@ -98,6 +101,9 @@ STRINGS = {
     },
 
     "en": {
+        # App title
+        "app_title":      "BVP Solver",
+
         # Tabs
         "tab_solution":   "Solution",
         "tab_parameters": "Parameters",

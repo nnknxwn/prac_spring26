@@ -699,7 +699,8 @@ class MainWindow(QMainWindow):
         self.lbl_phase_x.setVisible(False)
         plot_header.addWidget(self.lbl_phase_x)
         self.combo_phase_x = QComboBox()
-        self.combo_phase_x.setFixedWidth(70)
+        self.combo_phase_x.setFixedWidth(80)
+        self.combo_phase_x.setFixedHeight(30)
         self.combo_phase_x.setVisible(False)
         self.combo_phase_x.currentIndexChanged.connect(self._on_phase_axis_changed)
         plot_header.addWidget(self.combo_phase_x)
@@ -709,7 +710,8 @@ class MainWindow(QMainWindow):
         self.lbl_phase_y.setVisible(False)
         plot_header.addWidget(self.lbl_phase_y)
         self.combo_phase_y = QComboBox()
-        self.combo_phase_y.setFixedWidth(70)
+        self.combo_phase_y.setFixedWidth(80)
+        self.combo_phase_y.setFixedHeight(30)
         self.combo_phase_y.setVisible(False)
         self.combo_phase_y.currentIndexChanged.connect(self._on_phase_axis_changed)
         plot_header.addWidget(self.combo_phase_y)
@@ -1389,10 +1391,19 @@ class MainWindow(QMainWindow):
                 self._draw_plot(*self._last_result)
 
     def _color_icon(self, color_hex):
-        """Create a small colored square icon."""
-        from PyQt6.QtGui import QPixmap, QIcon
-        pix = QPixmap(14, 14)
-        pix.fill(QColor(color_hex))
+        """Create a small colored square icon with a contrasting border."""
+        from PyQt6.QtGui import QPixmap, QIcon, QPainter, QPen
+        size = 14
+        pix = QPixmap(size, size)
+        pix.fill(QColor(0, 0, 0, 0))  # transparent background
+        p = QPainter(pix)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        p.fillRect(1, 1, size - 2, size - 2, QColor(color_hex))
+        pen = QPen(QColor(self._colors["text"]))
+        pen.setWidth(1)
+        p.setPen(pen)
+        p.drawRect(0, 0, size - 1, size - 1)
+        p.end()
         return QIcon(pix)
 
     def _fill_table(self, t, x, var_names):

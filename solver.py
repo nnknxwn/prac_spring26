@@ -118,12 +118,26 @@ def solve_bvp(f_strings, R_strings, var_names, t_name, p0, t_span, t_star=None,
                          dense_output=True)
         t_out = traj.t
         x_out = traj.y
+        sol_dense = traj.sol
     else:
         traj_fwd = solve_ivp(f_rhs, [t_star, b], p,
-                              method=inner_method, rtol=inner_rtol, atol=inner_atol)
+                              method=inner_method, rtol=inner_rtol, atol=inner_atol,
+                              dense_output=True)
         traj_bwd = solve_ivp(f_rhs, [t_star, a], p,
-                              method=inner_method, rtol=inner_rtol, atol=inner_atol)
+                              method=inner_method, rtol=inner_rtol, atol=inner_atol,
+                              dense_output=True)
         t_out = np.concatenate([traj_bwd.t[::-1], traj_fwd.t[1:]])
         x_out = np.concatenate([traj_bwd.y[:, ::-1], traj_fwd.y[:, 1:]], axis=1)
 
-    return p, t_out, x_out
+        def sol_dense(t_query, _fwd=traj_fwd.sol, _bwd=traj_bwd.sol, _ts=t_star):
+            t_query = np.atleast_1d(np.asarray(t_query, dtype=float))
+            result = np.empty((n, t_query.size))
+            mask_bwd = t_query <= _ts
+            mask_fwd = ~mask_bwd
+            if np.any(mask_bwd):
+                result[:, mask_bwd] = _bwd(t_query[mask_bwd])
+            if np.any(mask_fwd):
+                result[:, mask_fwd] = _fwd(t_query[mask_fwd])
+            return result
+
+    return p, t_out, x_out, sol_dense

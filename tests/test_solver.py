@@ -9,7 +9,7 @@ from solver import solve_bvp
 def test_linear():
     # x1' = x2,  x2' = 0
     # x1(0) = 0,  x1(1) = 1  →  solution: x1 = t, x2 = 1
-    _, t, x = solve_bvp(
+    _, t, x, _ = solve_bvp(
         f_strings=["x2", "0"],
         R_strings=["xa0 - 0", "xb0 - 1"],
         var_names=["x1", "x2"],
@@ -24,7 +24,7 @@ def test_linear():
 
 def test_exponential():
     # x' = x,  x(0) = 1  →  solution: x(t) = e^t
-    _, t, x = solve_bvp(
+    _, t, x, _ = solve_bvp(
         f_strings=["x1"],
         R_strings=["xa0 - 1"],
         var_names=["x1"],
@@ -38,7 +38,7 @@ def test_exponential():
 
 def test_two_body():
     from examples.two_body import EQUATIONS, BOUNDARY_CONDITIONS, VARIABLES, T_VAR, T, P0_1
-    p, _, _ = solve_bvp(
+    p, _, _, _ = solve_bvp(
         f_strings=EQUATIONS,
         R_strings=BOUNDARY_CONDITIONS,
         var_names=VARIABLES,

@@ -79,6 +79,24 @@ STRINGS = {
             "• Макс. итераций: предел внешних итераций<br><br>"
             "При смене метода точность подставляется автоматически."
         ),
+        "help_methods_title": "Когда какой метод выбирать",
+        "help_methods_body": (
+            "<b>Жёсткая система</b> — задача, в которой переменные меняются "
+            "на сильно разных временных масштабах (большие коэффициенты разного порядка). "
+            "Например, химкинетика с реакциями k₁=10⁶ и k₂=1.<br><br>"
+            "<b>RK45 (Рунге-Кутта 4(5))</b> — для нежёстких задач: механика, орбиты, колебания. "
+            "Универсальный выбор по умолчанию.<br>"
+            "<b>Radau IIA</b> — для жёстких задач: химкинетика, электрические цепи, "
+            "задачи с резкими переключениями.<br>"
+            "<b>LSODA</b> — автоматически переключается между жёстким и нежёстким режимом. "
+            "Бери, если не уверен в природе задачи.<br><br>"
+            "<b>Точность:</b><br>"
+            "• <b>1e-3 / 1e-2</b> — грубая прикидка, форма решения<br>"
+            "• <b>1e-6 / 1e-4</b> — стандарт, дефолт программы<br>"
+            "• <b>1e-9 / 1e-7</b> — высокая точность, точные числа<br>"
+            "• <b>1e-12 / 1e-10</b> — научные расчёты<br><br>"
+            "Правило: точность внутренней задачи должна быть жёстче, чем внешней."
+        ),
         "help_plot_title": "График и таблица",
         "help_plot_body": (
             "• Кнопка <b>«•»</b> — показать/скрыть узлы сетки интегратора<br>"
@@ -221,6 +239,24 @@ STRINGS = {
             "• Tolerance: stopping criterion ||Φ(p)|| &lt; tol<br>"
             "• Max iterations: outer iteration limit<br><br>"
             "Tolerance auto-updates when method is changed."
+        ),
+        "help_methods_title": "When to use each method",
+        "help_methods_body": (
+            "<b>Stiff system</b> — a problem where variables change on very different "
+            "time scales (large coefficients of different orders). "
+            "Example: chemical kinetics with k₁=10⁶ and k₂=1.<br><br>"
+            "<b>RK45 (Runge-Kutta 4(5))</b> — for non-stiff problems: mechanics, orbits, "
+            "oscillations. Universal default choice.<br>"
+            "<b>Radau IIA</b> — for stiff problems: chemical kinetics, electrical circuits, "
+            "problems with sharp transitions.<br>"
+            "<b>LSODA</b> — automatically switches between stiff and non-stiff modes. "
+            "Use if unsure about the problem's nature.<br><br>"
+            "<b>Tolerance:</b><br>"
+            "• <b>1e-3 / 1e-2</b> — rough estimate, solution shape<br>"
+            "• <b>1e-6 / 1e-4</b> — standard, program default<br>"
+            "• <b>1e-9 / 1e-7</b> — high accuracy, precise numbers<br>"
+            "• <b>1e-12 / 1e-10</b> — scientific computations<br><br>"
+            "Rule: inner tolerance should be tighter than outer."
         ),
         "help_plot_title": "Plot and Table",
         "help_plot_body": (

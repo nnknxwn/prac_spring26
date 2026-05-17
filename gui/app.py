@@ -52,13 +52,12 @@ METHOD_TOOLTIPS = {
 # Smart defaults: tolerance per method (used as both rtol and atol)
 TOLERANCE_OPTIONS = ["1e-2", "1e-3", "1e-4", "1e-6", "1e-8", "1e-9", "1e-10", "1e-12"]
 
-METHOD_DEFAULTS = {
-    "RK45":   "1e-6",
-    "Radau":  "1e-6",
-    "LSODA":  "1e-6",
-}
-
 COLORS  = ["#2554d6", "#f97316", "#10b981", "#a855f7", "#ef4444", "#06b6d4"]
+
+# Author info (Author tab)
+AUTHOR_NAME  = "Дроздов Александр Юрьевич"
+AUTHOR_GROUP = "Группа 313"
+AUTHOR_PHOTO = os.path.join(os.path.dirname(__file__), "..", "images", "IMG_2705 W.jpg")
 
 
 LIGHT_COLORS = {
@@ -1047,19 +1046,13 @@ class MainWindow(QMainWindow):
             combo.setToolTip(tooltips[current_key])
 
     def _on_method_changed(self, which):
-        """Apply smart defaults when method changes."""
+        """Update tooltip when method changes (no auto-tolerance reset)."""
         if which == "inner":
             combo = self.combo_inner
-            tol_combo = self.combo_inner_tol
         else:
             combo = self.combo_outer
-            tol_combo = self.combo_outer_tol
 
         key = combo.currentData()
-        if key and key in METHOD_DEFAULTS:
-            default_tol = METHOD_DEFAULTS[key]
-            if default_tol in TOLERANCE_OPTIONS:
-                tol_combo.setCurrentIndex(TOLERANCE_OPTIONS.index(default_tol))
         if key and key in METHOD_TOOLTIPS.get(self.lang, {}):
             combo.setToolTip(METHOD_TOOLTIPS[self.lang][key])
 
@@ -1077,7 +1070,7 @@ class MainWindow(QMainWindow):
         cl.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         cl.setSpacing(14)
 
-        photo_path = os.path.join(os.path.dirname(__file__), "..", "images", "IMG_2705 W.jpg")
+        photo_path = AUTHOR_PHOTO
         photo_lbl = QLabel()
         photo_lbl.setObjectName("photoBox")
         photo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1092,12 +1085,12 @@ class MainWindow(QMainWindow):
             photo_lbl.setScaledContents(False)
         cl.addWidget(photo_lbl, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        name_lbl = QLabel("Дроздов Александр Юрьевич")
+        name_lbl = QLabel(AUTHOR_NAME)
         name_lbl.setObjectName("authorName")
         name_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cl.addWidget(name_lbl)
 
-        group_lbl = QLabel("Группа 313")
+        group_lbl = QLabel(AUTHOR_GROUP)
         group_lbl.setObjectName("authorGroup")
         group_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cl.addWidget(group_lbl)
@@ -1166,6 +1159,9 @@ class MainWindow(QMainWindow):
         n      = len(eqs)
         vars_  = [f"x{i+1}" for i in range(n)]
 
+        inner_tol = float(self.combo_inner_tol.currentText())
+        outer_tol = float(self.combo_outer_tol.currentText())
+
         return dict(
             f_strings    = eqs,
             R_strings    = bcs,
@@ -1176,10 +1172,10 @@ class MainWindow(QMainWindow):
             t_star       = t_star,
             inner_method = self.combo_inner.currentData(),
             outer_method = self.combo_outer.currentData(),
-            inner_rtol   = float(self.combo_inner_tol.currentText()),
-            inner_atol   = float(self.combo_inner_tol.currentText()),
-            outer_rtol   = float(self.combo_outer_tol.currentText()),
-            outer_atol   = float(self.combo_outer_tol.currentText()),
+            inner_rtol   = inner_tol,
+            inner_atol   = inner_tol,
+            outer_rtol   = outer_tol,
+            outer_atol   = outer_tol,
             max_iter     = int(self.entry_max_iter.text()),
         ), vars_
 
@@ -1189,7 +1185,7 @@ class MainWindow(QMainWindow):
     def _on_solve(self):
         try:
             params, var_names = self._collect_input()
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             QMessageBox.critical(self, "", str(e))
             return
 
@@ -1332,19 +1328,24 @@ class MainWindow(QMainWindow):
         else:
             self.btn_phase.setEnabled(True)
 
-        for combo, target_idx in (
-            (self.combo_phase_x, self._phase_x_idx),
-            (self.combo_phase_y, self._phase_y_idx),
+        # Clamp indices to valid range and ensure they differ
+        x_idx = min(self._phase_x_idx, max(0, n - 1))
+        y_idx = min(self._phase_y_idx, max(0, n - 1))
+        if n >= 2 and x_idx == y_idx:
+            y_idx = (x_idx + 1) % n
+
+        for combo, idx in (
+            (self.combo_phase_x, x_idx),
+            (self.combo_phase_y, y_idx),
         ):
             combo.blockSignals(True)
             combo.clear()
             combo.addItems(var_names)
-            combo.setCurrentIndex(min(target_idx, max(0, n - 1)))
+            combo.setCurrentIndex(idx)
             combo.blockSignals(False)
-        # Defaults: x1, x2
         if n >= 2:
-            self._phase_x_idx = self.combo_phase_x.currentIndex()
-            self._phase_y_idx = self.combo_phase_y.currentIndex()
+            self._phase_x_idx = x_idx
+            self._phase_y_idx = y_idx
 
     def _on_table_step_changed(self):
         """Re-fill table when step value changes."""

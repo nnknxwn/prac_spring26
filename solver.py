@@ -51,12 +51,16 @@ def _inner_solve(f_num, fx_num, t_star, p, t_span, method, rtol, atol):
         ya = y0
     else:
         sol = solve_ivp(rhs, [t_star, a], y0, method=method, rtol=rtol, atol=atol)
+        if not sol.success:
+            raise RuntimeError(f"Inner integration to a failed: {sol.message}")
         ya  = sol.y[:, -1]
 
     if np.isclose(t_star, b):
         yb = y0
     else:
         sol = solve_ivp(rhs, [t_star, b], y0, method=method, rtol=rtol, atol=atol)
+        if not sol.success:
+            raise RuntimeError(f"Inner integration to b failed: {sol.message}")
         yb  = sol.y[:, -1]
 
     return ya[:n], yb[:n], ya[n:].reshape(n, n), yb[n:].reshape(n, n)
@@ -91,9 +95,11 @@ def solve_bvp(f_strings, R_strings, var_names, t_name, p0, t_span, t_star=None,
         Jb = np.array(Rxb_num(*xa, *xb), dtype=float).reshape(n, n)
         return Ja @ Xa + Jb @ Xb
 
+    converged = False
     for _ in range(max_iter):
         Phi0 = Phi(p)
         if np.linalg.norm(Phi0) < outer_rtol:
+            converged = True
             break
 
         Phi0_fixed = Phi0.copy()
@@ -107,7 +113,20 @@ def solve_bvp(f_strings, R_strings, var_names, t_name, p0, t_span, t_star=None,
 
         sol = solve_ivp(outer_rhs, [0.0, 1.0], p,
                         method=outer_method, rtol=outer_rtol, atol=outer_atol)
+        if not sol.success:
+            raise RuntimeError(f"Outer continuation failed: {sol.message}")
         p = sol.y[:, -1]
+    else:
+        # Re-check after final iteration
+        if np.linalg.norm(Phi(p)) < outer_rtol:
+            converged = True
+
+    if not converged:
+        residual = float(np.linalg.norm(Phi(p)))
+        raise RuntimeError(
+            f"Did not converge in {max_iter} iterations: "
+            f"||Phi(p)|| = {residual:.3e} > tol = {outer_rtol:.3e}"
+        )
 
     def f_rhs(t, x):
         return np.array(f_num(t, *x), dtype=float).flatten()

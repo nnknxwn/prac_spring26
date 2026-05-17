@@ -93,7 +93,6 @@ STRINGS = {
             "• Метод: обычно Рунге-Кутта 4(5) достаточно<br>"
             "• Точность: критерий остановки ||Φ(p)|| &lt; tol<br>"
             "• Макс. итераций: предел внешних итераций<br><br>"
-            "При смене метода точность подставляется автоматически.<br><br>"
             "<b>Доступные методы:</b><br>"
             "• <b>Рунге-Кутта 4(5) (RK45)</b> — явный метод Рунге-Кутта порядка 4(5) "
             "Дорманда-Принса. Универсальный, по умолчанию. Подходит для большинства "
@@ -191,7 +190,6 @@ STRINGS = {
         ),
 
         # Errors / messages
-        "err_count_mismatch": "Число уравнений должно совпадать с числом краевых условий.",
         "status_solving":     "Вычисление...",
         "status_done":        "Готово.",
         "status_error":       "Ошибка: {msg}",
@@ -289,7 +287,6 @@ STRINGS = {
             "• Method: Runge-Kutta 4(5) usually sufficient<br>"
             "• Tolerance: stopping criterion ||Φ(p)|| &lt; tol<br>"
             "• Max iterations: outer iteration limit<br><br>"
-            "Tolerance auto-updates when method is changed.<br><br>"
             "<b>Available methods:</b><br>"
             "• <b>Runge-Kutta 4(5) (RK45)</b> — explicit Runge-Kutta of order 4(5) "
             "by Dormand-Prince. Universal, default. Fits most non-stiff problems.<br>"
@@ -386,7 +383,6 @@ STRINGS = {
         ),
 
         # Errors / messages
-        "err_count_mismatch": "Number of equations must equal number of boundary conditions.",
         "status_solving":     "Computing...",
         "status_done":        "Done.",
         "status_error":       "Error: {msg}",

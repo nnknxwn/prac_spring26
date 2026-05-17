@@ -82,7 +82,9 @@ STRINGS = {
             "• <b>«📚 Примеры»</b> — встроенная библиотека: учебные задачи и "
             "примеры из статьи Аввакумова-Киселева (2006)<br>"
             "• <b>«📂 Открыть»</b> — загрузить задачу из JSON<br>"
-            "• <b>«💾 Сохранить»</b> — сохранить текущую задачу в JSON"
+            "• <b>«💾 Сохранить»</b> — сохранить текущую задачу в JSON<br><br>"
+            "<i>Перед решением все поля проверяются. Если что-то пустое или "
+            "нечисловое — появится понятное сообщение с указанием поля.</i>"
         ),
         "help_params_title": "Вкладка «Параметры»",
         "help_params_body": (
@@ -286,7 +288,9 @@ STRINGS = {
             "• <b>«📚 Examples»</b> — built-in library: tutorial problems and "
             "examples from the Avvakumov-Kiselev article (2006)<br>"
             "• <b>«📂 Open»</b> — load problem from JSON<br>"
-            "• <b>«💾 Save»</b> — save current problem to JSON"
+            "• <b>«💾 Save»</b> — save current problem to JSON<br><br>"
+            "<i>Before solving, all fields are validated. If anything is empty "
+            "or non-numeric, you will see a clear message pointing at the field.</i>"
         ),
         "help_params_title": "Parameters Tab",
         "help_params_body": (

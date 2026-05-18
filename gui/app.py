@@ -55,9 +55,11 @@ TOLERANCE_OPTIONS = ["1e-2", "1e-3", "1e-4", "1e-6", "1e-8", "1e-9", "1e-10", "1
 COLORS  = ["#2554d6", "#f97316", "#10b981", "#a855f7", "#ef4444", "#06b6d4"]
 
 # Author info (Author tab)
-AUTHOR_NAME  = "Дроздов Александр Юрьевич"
-AUTHOR_GROUP = "Группа 313"
-AUTHOR_PHOTO = os.path.join(os.path.dirname(__file__), "..", "images", "IMG_2705 W.jpg")
+AUTHOR_NAME     = "Дроздов Александр Юрьевич"
+AUTHOR_GROUP    = "Группа 313"
+AUTHOR_DEPT     = "Кафедра Оптимального Управления"
+AUTHOR_PRACTICE = "Технологическая практика"
+AUTHOR_PHOTO    = os.path.join(os.path.dirname(__file__), "..", "images", "IMG_2705 W.jpg")
 
 
 LIGHT_COLORS = {
@@ -1094,6 +1096,16 @@ class MainWindow(QMainWindow):
         group_lbl.setObjectName("authorGroup")
         group_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cl.addWidget(group_lbl)
+
+        dept_lbl = QLabel(AUTHOR_DEPT)
+        dept_lbl.setObjectName("authorGroup")
+        dept_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        cl.addWidget(dept_lbl)
+
+        practice_lbl = QLabel(AUTHOR_PRACTICE)
+        practice_lbl.setObjectName("authorGroup")
+        practice_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        cl.addWidget(practice_lbl)
 
         outer.addWidget(center, alignment=Qt.AlignmentFlag.AlignHCenter)
         outer.addStretch(1)
